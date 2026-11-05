@@ -46,6 +46,8 @@
 - [G. 패키지 관리자](G-packages.md)
 - [H. Proxmox VE 설치·구성·활용](H-pve.md)
 - [I. 네트워크·시스템 접근제어](I-access-control.md)
+- [J. 내 PC 작업 환경](J-workstation.md)
+- [K. 서버 납품·인수](K-delivery.md)
 
 # AI로 내 교재 만들기
 

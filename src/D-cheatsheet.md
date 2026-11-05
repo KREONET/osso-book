@@ -170,4 +170,27 @@ ping ⟨10.10.1.5⟩
 ping -M do -s 8972 ⟨target⟩
 ```
 
+## 7. 서비스 (systemd)
+
+옛 문서에는 `service`·`/etc/init.d/` 명령이 많습니다. 지금 배포판은 systemd이고, 옛 명령은 대개 systemd로 넘겨주는 호환용입니다.
+
+| | 옛 방식 (init.d) | 지금 (systemd) |
+| --- | --- | --- |
+| 재시작 | `service sshd restart` | `systemctl restart sshd` |
+| 상태 | `service sshd status` | `systemctl status sshd` |
+| 부팅 시 자동 시작 | `chkconfig sshd on` | `systemctl enable sshd` |
+| 로그 | `/var/log/…` 파일 | `journalctl -u sshd` |
+
+```bash
+# 설정 문법 검사 후 재시작 (sshd 예)
+sudo sshd -t
+sudo systemctl restart sshd
+# 이 서비스의 최근 로그
+journalctl -u sshd -n 50
+# 부팅 때 켜지는가
+systemctl is-enabled sshd
+```
+
+데비안·우분투에서는 서비스 이름이 `ssh`입니다(`systemctl restart ssh`). 프로세스 트리 관점에서 systemd가 무엇을 바꿨는지는 [Part 4](04-container.md)에 있습니다.
+
 관련: [부록 F 용어집](F-glossary.md) · [Part 2](02-firewall.md)

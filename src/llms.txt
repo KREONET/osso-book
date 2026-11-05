@@ -53,6 +53,8 @@
 - [G. 패키지 관리자](https://raw.githubusercontent.com/KREONET/osso-book/main/src/G-packages.md)
 - [H. Proxmox VE 설치·구성·활용](https://raw.githubusercontent.com/KREONET/osso-book/main/src/H-pve.md)
 - [I. 네트워크·시스템 접근제어](https://raw.githubusercontent.com/KREONET/osso-book/main/src/I-access-control.md)
+- [J. 내 PC 작업 환경](https://raw.githubusercontent.com/KREONET/osso-book/main/src/J-workstation.md)
+- [K. 서버 납품·인수](https://raw.githubusercontent.com/KREONET/osso-book/main/src/K-delivery.md)
 
 ## AI로 내 교재 만들기
 

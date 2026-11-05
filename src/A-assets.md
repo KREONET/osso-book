@@ -25,14 +25,17 @@
 | chat | 사내 LLM 백엔드(채팅 API) |
 | ns5 | 사내 DNS 서비스 |
 
-## 사내 위키 문서
+## 운영 문서 (이 책 안)
 
-| 태그 | 내용 |
-|---|---|
-| pve-guide | Proxmox VE 운영 가이드 |
-| pfsense-guide | pfSense 방화벽 운영 가이드 |
-| access-control | 접근통제(NAC·802.1X 등) 문서 |
+| 태그 | 내용 | 이 책의 위치 |
+|---|---|---|
+| pve-guide | Proxmox VE 설치·구성·활용 | [부록 H](H-pve.md) |
+| pfsense-guide | pfSense 방화벽 운영 | [Part 3 §3.3](03-network.md), [실습⑦](labs/lab-07.md) |
+| access-control | 네트워크·시스템 접근제어(NAC·802.1X 등) | [부록 I](I-access-control.md), [Part 6 §6.5](06-access.md) |
+| workstation | 내 PC 작업 환경(터미널·SSH 클라이언트·셸) | [부록 J](J-workstation.md) |
+| delivery | 서버 납품·인수 | [부록 K](K-delivery.md) |
+| packages | 패키지 관리자 | [부록 G](G-packages.md) |
 
-> 위키는 사내 열람용이라 공개본에는 제목만 둡니다. → [부록 E](E-references.md)
+> 운영 문서의 내용은 모두 이 책 안에 옮겨 두었습니다. 옮겨 온 원래 문서와 책 위치의 대응은 [부록 E](E-references.md)에 있습니다.
 
 관련: [부록 B 라이선스](B-licenses.md) · [부록 D 치트시트](D-cheatsheet.md) · [부록 F 용어집](F-glossary.md)
