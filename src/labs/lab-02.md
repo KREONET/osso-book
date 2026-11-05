@@ -44,7 +44,10 @@ sudo qemu-img convert -p -f qcow2 -O raw /mnt/⟨image.img⟩ /dev/⟨sda⟩
 ```bash
 htop --version            # ①에서 넣은 패치가 그대로 있다
 cat /etc/machine-id       # sysprep 덕에 새 값(클론과 안 겹침)
+sudo hostnamectl set-hostname ⟨042-u24-web⟩   # 새 장비엔 새 이름 — ⟨IP끝 3자리⟩-⟨OS⟩-⟨용도⟩
 ```
+
+> 💡 VM이 많아지면 `ubuntu@ubuntu`로는 헷갈린다. **`⟨IP 끝자리 3자리⟩-⟨u24 같은 OS약어⟩-⟨용도⟩`** 처럼 이름에 정보를 넣으면 프롬프트만 보고 "어디냐·apt냐 dnf냐·재부팅해도 되냐"가 보인다. OS 버전·IP는 어차피 `/etc/os-release`·`ip a`로 누구나 보는 정보라 보안 손해는 거의 없고 편의는 크다([Part 1 §1.7](../01-image.md)).
 
 👀 **보이는 것:** 처음엔 부팅 실패 → convert 100% → 디스크·USB 떼고 부팅하면 **OS가 뜨고**, 내 패치(htop)와 **새 정체성**이 확인됨. 설치 마법사 한 번 안 거쳤다.
 

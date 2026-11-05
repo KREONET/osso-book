@@ -16,7 +16,7 @@
 | DOCKER-USER | Docker가 FORWARD 앞에 두는 사용자 정의 iptables 체인. 컨테이너 방화벽을 여기서 건다. |
 | egress | 나가는 트래픽. "어느 고도에서 egress를 통제하나"가 이 책의 한 줄. |
 | forward-auth | 리버스 프록시가 요청을 인증 서버에 먼저 물어보고 통과시키는 방식. |
-| HNUM | ohmyzsh 자산 태그의 호스트 번호 항목. 프롬프트에 표시된다. |
+| HNUM | ohmyzsh 프롬프트에 표시되는 셸 히스토리 번호. `!N`으로 그 번호의 명령을 다시 실행한다. |
 | HTTP-01 | ACME 검증 방식. 80포트의 지정 경로로 소유를 증명한다. |
 | INPUT / FORWARD | iptables/nftables 체인. INPUT은 호스트 자신에게 오는 것, FORWARD는 호스트를 거쳐 가는 것(컨테이너 트래픽). |
 | internal network | 외부로 나가는 경로가 없는 Docker 네트워크(`internal: true`). |
@@ -26,7 +26,8 @@
 | mTLS | 서버뿐 아니라 클라이언트도 인증서로 인증하는 상호 TLS. |
 | NAC | Network Access Control. 단말 인증·상태 검사 후 네트워크 접근 허용. |
 | OIDC | OpenID Connect. OAuth 2.0 위의 로그인(인증) 표준. |
-| ohmyzsh 태그 (TAG1/TAG2/HNUM) | 서버 프롬프트에 자산 구분(용도·소속·호스트 번호)을 표시하는 태그. |
+| ohmyzsh 태그 (TAG1/TAG2) | 물리 서버의 `/etc/tag1`(모델)·`/etc/tag2`(자산 ID)를 프롬프트에 표시하는 강사 개인 컨벤션. 소개만 하고 실습하지 않는다. |
+| 호스트명 규칙 | VM 구분용 이름 짓기 예: `⟨IP 끝자리 3자리⟩-⟨OS약어⟩-⟨용도⟩` (예: `042-u24-web`). |
 | ProxyJump | `ssh -J`. 중간 서버(bastion)를 경유해 대상에 접속한다. |
 | PUEL | VirtualBox Extension Pack의 라이선스. 개인·평가용만 무료, 기관은 유료. → [부록 B](B-licenses.md) |
 | SNAT | 출발지 주소 변환. 내부 대역이 외부로 나갈 때(masquerade) 쓴다. |
