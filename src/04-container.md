@@ -16,7 +16,7 @@
 | 산출물 | 디스크 이미지(수 GB) | 레이어 이미지(수십~수백 MB) |
 | 잘 맞는 일 | 다른 OS, 강한 멀티테넌트 | 서비스 하나, 재현 가능한 배포 |
 
-**왜 이게 중요한가.** 커널을 공유한다는 건 *컨테이너 탈출 = 호스트 장악*이라는 뜻이다. 그래서 신뢰할 수 없는 코드를 돌릴 땐 VM 경계가 여전히 낫고, 컨테이너에는 비루트·egress 차단 같은 보강이 붙는다(4.4, 4.5).
+**왜 이게 중요한가.** 커널을 공유한다는 건 *컨테이너 탈출 = 호스트 장악*이라는 뜻이다. 그래서 신뢰할 수 없는 코드를 돌릴 땐 VM 경계가 여전히 낫고, 컨테이너에는 비루트(non-root: root가 아닌 일반 사용자로 실행)·egress 차단 같은 보강이 붙는다(4.4, 4.5).
 
 **과잉설계 경계.** 컨테이너가 쉬워지면 반대 실수가 온다. "서비스 헬스 보고 싶다"에 Prometheus + Grafana + Alertmanager + exporter를 짓는 것.
 
@@ -223,9 +223,9 @@ docker network inspect <project>_web --format '{{.Internal}}'
 
 **바깥 링크.** [Docker: Networking](https://docs.docker.com/engine/network/) · [Compose: networks (`internal`)](https://docs.docker.com/reference/compose-file/networks/#internal) · [Packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
 
-## 4.5 이미지 빌드 — Dockerfile, 비루트, 멀티스테이지, 대역 겹침
+## 4.5 이미지 빌드 — Dockerfile, 비루트(non-root), 멀티스테이지, 대역 겹침
 
-### 비루트 (`USER`)
+### 비루트(non-root) — `USER`
 
 **멘탈모델.** 컨테이너 안의 root는 호스트 root와 *같은 UID 0*이다. 격리가 뚫리거나 볼륨을 마운트한 상태라면 그 힘이 그대로 호스트에 닿는다. 앱은 root일 이유가 없다.
 

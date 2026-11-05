@@ -25,6 +25,7 @@
 | machine-id | `/etc/machine-id`. 머신 고유 ID로, 이미지 복제 시 반드시 리셋해야 한다. |
 | mTLS | 서버뿐 아니라 클라이언트도 인증서로 인증하는 상호 TLS. |
 | NAC | Network Access Control. 단말 인증·상태 검사 후 네트워크 접근 허용. |
+| non-root (비루트) | 프로세스를 root가 아닌 일반 사용자로 실행하는 것. 뚫려도 피해가 그 사용자 권한에 머문다. Dockerfile의 `USER`. → [Part 4 §4.5](04-container.md) |
 | OIDC | OpenID Connect. OAuth 2.0 위의 로그인(인증) 표준. |
 | ohmyzsh 태그 (TAG1/TAG2) | 물리 서버의 `/etc/tag1`(모델)·`/etc/tag2`(자산 ID)를 프롬프트에 표시하는 강사 개인 컨벤션. 소개만 하고 실습하지 않는다. |
 | 호스트명 규칙 | VM 구분용 이름 짓기 예: `⟨IP 끝자리 3자리⟩-⟨OS약어⟩-⟨용도⟩` (예: `042-u24-web`). |
