@@ -6,7 +6,7 @@
 
 ⌨️ **해보기**
 ```bash
-# AI에게 줄 ssh 키는 읽기 위주 계정. config는 ⑧에서 만든 ProxyJump 그대로.
+# AI에게 줄 ssh 키는 읽기 전용 조사 계정(ops-ro). config는 ⑧에서 만든 ProxyJump 그대로.
 # Claude Code 실행 후, 예:
 claude
 #  "ssh로 isolated1~3 돌면서 OS버전·열린포트·docker ps·디스크사용량 표로 정리해줘.
