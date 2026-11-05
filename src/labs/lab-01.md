@@ -74,7 +74,7 @@ virt-sysprep -a ⟨image.img⟩
 
 > 비번은 `file:pass.txt` 형태로 — `password:⟨평문⟩`은 셸 히스토리·`ps`·스크립트에 그대로 남는다. 파일로 받고 끝나면 `shred -u`로 지운다(저장소에 **커밋 금지**).
 
-> 오프라인 편집 중엔 네트워크가 없다 → ohmyzsh는 **`--firstboot-command`**로 **첫 부팅 때** 설치되게 심는다(egress 허용 필요 — Day1 ⑥과 연결).
+> 오프라인 편집 중엔 네트워크가 없다 → ohmyzsh는 `--firstboot-command`로 **첫 부팅 때** 설치되게 심는다(egress 허용 필요 — Day1 ⑥과 연결).
 
 ⌨️ **설정은 "고치는 것"이 아니라 "얹는 것" — 드롭인(.d)을 직접 발견한다**
 

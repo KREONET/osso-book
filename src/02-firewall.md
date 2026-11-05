@@ -18,6 +18,43 @@
 | 계열 | Debian/Ubuntu | RHEL/Rocky/Fedora |
 | 하부 | iptables-nft / nftables | nftables |
 
+### iptables에서 nftables로 — 언제 바뀌었고, 지금의 `iptables`는 무엇인가
+
+커널 안의 방화벽 틀은 **netfilter**이고, 거기에 규칙을 넣는 방식은 두 세대가 있습니다. 오래된 리눅스는 **iptables**(커널의 x_tables), 요즘 리눅스는 이를 개선한 **nftables**(커널의 nf_tables)입니다. nftables는 리눅스 커널 3.13(2014년)에 들어왔고, 배포판의 기본이 된 시점은 이렇습니다.
+
+| 배포판 | nftables가 기본인 버전 | 그 전 |
+| --- | --- | --- |
+| Debian | **10 buster (2019년)** | 9까지 iptables(legacy) |
+| RHEL · Rocky | **RHEL 8 (2019년)** · Rocky 8 (2021년) | RHEL·CentOS 7까지 iptables. RHEL 8에는 legacy iptables가 아예 들어 있지 않습니다. RHEL 9에서는 iptables 명령 자체가 지원 중단(deprecated) 예정으로 분류됐습니다 |
+| Ubuntu (LTS 기준) | **22.04 (2022년)** | 20.04까지 legacy (중간 릴리스 20.10에서 전환이 시작됨) |
+
+그런데 요즘 배포판에도 `iptables` 명령은 그대로 있습니다. iptables 1.8 버전부터 같은 이름의 명령이 두 벌이 되었기 때문입니다.
+
+- `iptables-legacy` — 옛 방식. 규칙이 x_tables에 들어갑니다.
+- `iptables-nft` — **iptables 문법을 받아서 nftables 규칙으로 번역해 넣습니다.** 위 표의 배포판에서는 그냥 `iptables`라고 치면 이것이 실행됩니다.
+
+ufw, Docker, fail2ban처럼 iptables 문법으로 규칙을 넣는 도구들도 모두 이 번역 경로를 탑니다. 그래서 그 규칙들이 `nft list ruleset`에 함께 보이고, 다음 절(2.2)에서 Docker의 체인을 nftables로 추적할 수 있는 것입니다.
+
+```bash
+# 어느 쪽인가: (nf_tables) 면 nftables로 번역되는 중, (legacy) 면 옛 방식
+iptables -V
+# 데비안·우분투: 'iptables'가 실제로 가리키는 명령
+update-alternatives --display iptables
+# iptables 문법이 nftables 문법으로 어떻게 바뀌는지 보기
+iptables-translate -A INPUT -p tcp --dport 22 -j ACCEPT
+```
+
+출력 예 (Ubuntu 22.04):
+
+```text
+iptables v1.8.7 (nf_tables)
+nft add rule ip filter INPUT tcp dport 22 counter accept
+```
+
+예전에 저장해 둔 iptables 규칙 파일은 `iptables-restore-translate -f ⟨rules.v4⟩`로 nftables 문법으로 바꿔 볼 수 있습니다.
+
+⚠️ **한 머신에서 두 방식을 섞지 마세요.** legacy 규칙과 nft 규칙이 함께 있으면 패킷은 둘 다를 거치지만, `nft list ruleset`에는 legacy 쪽 규칙이 보이지 않습니다. "규칙에는 없는데 막힌다"는 수수께끼가 여기서 생깁니다. `iptables-nft`가 `Warning: iptables-legacy tables present`라고 경고하면 이 상태입니다.
+
 그런데 두 도구 모두에게 **똑같이 닥치는 함정**이 있습니다. 다음 절의 주인공, Docker입니다.
 
 **확인 커맨드**
@@ -31,7 +68,7 @@ sudo firewall-cmd --get-active-zones
 sudo nft list ruleset | less
 ```
 
-**바깥 링크:** [ufw (Ubuntu 문서)](https://documentation.ubuntu.com/server/how-to/security/firewalls/) · [firewalld 공식 문서](https://firewalld.org/documentation/) · [nftables wiki](https://wiki.nftables.org/)
+**바깥 링크:** [ufw (Ubuntu 문서)](https://documentation.ubuntu.com/server/how-to/security/firewalls/) · [firewalld 공식 문서](https://firewalld.org/documentation/) · [nftables wiki](https://wiki.nftables.org/) · [Debian 10 릴리스 노트 — nftables 기본](https://www.debian.org/releases/buster/amd64/release-notes/ch-whats-new.html) · [Fedora: iptables-nft 기본 전환](https://www.fedoraproject.org/wiki/Changes/iptables-nft-default)
 
 ## 2.2 Docker가 방화벽을 건너뛰는 이유 — DNAT→FORWARD, nftables 체인 3단계
 
