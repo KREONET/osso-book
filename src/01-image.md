@@ -131,6 +131,63 @@ grep -v '#' /etc/ssh/sshd_config | uniq
 
 더 깊이: [libguestfs 문서](https://libguestfs.org/guestfs.3.html), [virt-customize](https://libguestfs.org/virt-customize.1.html), [qemu-nbd](https://www.qemu.org/docs/master/tools/qemu-nbd.html), [sshd_config(5)](https://man.openbsd.org/sshd_config), [systemd.unit(5) 드롭인](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html).
 
+### 점 파일(dotfile) — 손에 익은 환경도 파일이다
+
+리눅스에서 이름이 점(`.`)으로 시작하는 파일은 **숨김 파일**입니다. `ls`로는 안 보이고 `ls -a`를 해야 보입니다.
+
+```bash
+# 안 보인다
+ls ~
+# 보인다
+ls -a ~
+```
+
+이 점 파일들이 각 도구의 **사용자 설정**입니다.
+
+| 점 파일 | 무엇 |
+| --- | --- |
+| `~/.bashrc`, `~/.zshrc` | 셸 설정 — `alias`, `PATH`, 프롬프트 |
+| `~/.vimrc` | vi(vim) 설정 — 들여쓰기, 줄 번호, 문법 강조 |
+| `~/.ssh/config` | ssh 접속 별명 — 호스트·사용자·포트·경유지 |
+| `~/.gitconfig` | git 이름·이메일·별명 |
+| `~/.tmux.conf` | 터미널 분할 도구 설정 |
+
+**조직의 암묵지는 점 파일에 있습니다.** 고수가 빠른 이유의 상당 부분은 손이 아니라 몇 년 동안 다듬은 `alias` 몇 줄, `~/.ssh/config`의 접속 별명, `.vimrc` 몇 줄입니다. 그런데 이건 그 사람 홈 디렉터리에 숨어 있어서(말 그대로 `ls`로 안 보여서) 아무도 모릅니다. 그래서 컴퓨터를 잘 다루는 사람들은 자기 점 파일을 **GitHub에 저장소로 올려 두고**(흔히 `dotfiles`라는 이름) 새 장비마다 그대로 내려받습니다. GitHub에서 `dotfiles`로 검색하면 수많은 예가 나옵니다.
+
+팀으로 넓히면 효과가 더 큽니다. **팀이 점 파일을 공유하면** 신입은 첫날부터 선배와 같은 별명·같은 도구·같은 프롬프트로 일합니다. 온보딩 문서를 읽는 것보다 빠르고, 개인 편차가 줄어듭니다. 실습①에서 심는 KREONET [ohmyzsh](https://github.com/KREONET/ohmyzsh) 운영환경이 바로 그런 **조직 공용 점 파일**입니다.
+
+**ssh 접속 별명을 프로젝트별로 나눠 공유하기.** 앞의 드롭인과 같은 발상을 내 홈에도 쓸 수 있습니다. `~/.ssh/config`에 `Include` 한 줄을 두고, 프로젝트마다 파일을 하나씩 둡니다.
+
+```
+~/.ssh/config              ← 맨 위에 Include 한 줄 + 내 개인 설정
+~/.ssh/conf.d/prj1.conf    ← 프로젝트1 팀이 공유하는 파일
+~/.ssh/conf.d/prj2.conf    ← 프로젝트2 팀이 공유하는 파일
+```
+
+```bash
+# ~/.ssh/config — Include는 반드시 맨 위에
+Include conf.d/*.conf
+
+Host *
+  ServerAliveInterval 30
+```
+
+```bash
+# ~/.ssh/conf.d/prj1.conf — 팀 저장소에서 받아 그대로 둔다
+Host prj1-web
+  HostName 192.0.2.10
+  User deploy
+Host prj1-db
+  HostName 192.0.2.11
+  ProxyJump prj1-web
+```
+
+이제 팀원 모두가 `ssh prj1-db`라는 **같은 이름**으로 같은 서버에, 같은 경로(경유지 포함)로 들어갑니다. 서버 IP가 바뀌면 그 파일 하나만 고쳐 다시 나누면 됩니다. 실제로 어떤 값이 적용되는지는 `ssh -G prj1-db`로 확인합니다.
+
+⚠️ **`Include`는 맨 위에.** `Include`가 어떤 `Host` 블록 **아래**에 있으면 그 호스트에게만 적용됩니다. `Host bastion` 밑에 `Include`를 두면 `ssh prj1-web`이 "그런 호스트 없음"이 됩니다. 그리고 ssh는 **먼저 읽은 값이 이기므로**, 맨 위에 둔 공유 설정이 아래의 `Host *` 기본값보다 우선합니다.
+
+⚠️ **비밀은 공유하지 않습니다.** `~/.ssh/config`·`.bashrc`·`.vimrc`는 나눠도 되지만, 개인 키(`~/.ssh/id_*`), 토큰이 든 파일(`~/.netrc`, `~/.pgpass`, `~/.aws/credentials`, `~/.docker/config.json`)은 절대 저장소에 올리지 않습니다. 점 파일 저장소에는 `.gitignore`로 이것들을 막아 두고, 올리기 전에 한 번 더 `git diff`로 봅니다.
+
 ## 1.4 정체성 리셋 — virt-sysprep, machine-id, SSH hostkey, SELinux .autorelabel
 
 **멘탈모델:** 이미지를 복제할 때 *복제되면 안 되는 것*은 데이터가 아니라 **정체성**이다.

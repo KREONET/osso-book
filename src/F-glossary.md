@@ -12,6 +12,7 @@
 | cgroup | 프로세스 묶음별로 CPU·메모리·I/O·프로세스 수를 제한하고 재는 리눅스 기능. 컨테이너의 "쿼터" 쪽. → [Part 4 §4.0](04-container.md) |
 | CCE | Common Configuration Enumeration. 보안 설정 항목의 표준 식별자. |
 | CVE | 공개된 취약점의 표준 식별 번호(예: CVE-2024-xxxx). |
+| dotfile (점 파일) | 이름이 `.`으로 시작하는 숨김 파일(`ls -a`로 보임). `~/.bashrc`·`~/.ssh/config` 같은 사용자 설정. 팀이 공유하면 온보딩과 편차 줄이기에 효과적이다. → [Part 1 §1.3](01-image.md) |
 | DNAT | 목적지 주소 변환. 외부 포트를 내부 서비스로 포워딩할 때 쓴다. |
 | DNS-01 | ACME 검증 방식. DNS TXT 레코드로 소유를 증명한다(와일드카드 가능). |
 | DOCKER-USER | Docker가 FORWARD 앞에 두는 사용자 정의 iptables 체인. 컨테이너 방화벽을 여기서 건다. |

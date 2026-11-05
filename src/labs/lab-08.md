@@ -85,8 +85,14 @@ sudo sshd -t && sudo systemctl reload sshd
 # bastion은 vmbr0(외부)·vmbr1(내부) 둘 다 꽂힌 멀티홈드 Rocky VM.
 # ★ 멀티홈드 원칙: default route는 vmbr0 쪽 하나만, 내부 대역(10.10.1.0/24)은 vmbr1로 명시 라우트.
 #   ip route add 10.10.1.0/24 dev ens19   (또는 nmcli c mod … +ipv4.routes)  ← 안 그러면 "어느 길로 나가지?" 모호
-# 내 쪽 ~/.ssh/config:
-cat >> ~/.ssh/config <<'EOF'
+# 내 쪽: ~/.ssh/config 맨 위에 Include 한 줄 (이미 있으면 건너뛴다)
+mkdir -p ~/.ssh/conf.d
+if ! grep -qx 'Include conf.d/\*.conf' ~/.ssh/config 2>/dev/null; then
+  { echo 'Include conf.d/*.conf'; echo; cat ~/.ssh/config 2>/dev/null; } > ~/.ssh/config.new
+  mv ~/.ssh/config.new ~/.ssh/config; chmod 600 ~/.ssh/config
+fi
+# 이 실습의 접속 별명은 파일 하나로 — 팀이면 이 파일을 나눠 쓴다
+cat > ~/.ssh/conf.d/osso-lab.conf <<'EOF'
 Host bastion
   HostName ⟨bastion.wan⟩
   User jump
@@ -95,9 +101,13 @@ Host lanvm
   HostName ⟨10.10.1.5⟩
   ProxyJump bastion
 EOF
+# 실제로 적용되는 값 확인
+ssh -G lanvm | grep -E '^(hostname|user|proxyjump) '
 # bastion을 자동 경유해 격리 LAN VM 진입
 ssh lanvm hostname
 ```
+
+> 💡 `cat >> ~/.ssh/config`로 덧붙이지 않고 `conf.d/` 파일 하나로 나눈 이유: ①의 드롭인과 같다. 이 실습이 끝나면 파일 하나만 지우면 깨끗하고, 팀이라면 이 파일을 나눠 모두가 `ssh lanvm`이라는 **같은 이름**으로 들어간다. 점 파일과 팀 공유는 [Part 1 §1.3](../01-image.md)에서.
 
 👀 **보이는 것:** `sshd -T`에 `allowtcpforwarding yes`·`permitopen *:22`. 격리 VM에 직접 `ssh`는 실패(경로 없음) → `ssh lanvm`은 bastion을 거쳐 성공. (해 보고 싶다면: `10-jump.conf`에서 `yes`를 `no`로 바꾸고 reload → 같은 명령이 `administratively prohibited`로 실패.)
 
