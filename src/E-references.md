@@ -20,6 +20,12 @@
 * 김창준, 『야생 학습 — 불확실성의 시대, 학습은 왜 더 중요해졌는가』, 2026년 11월 2일. <https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=404995378>
   — 이 책의 [지도](map.md)·갈림길 구성(지도·옵션·가설·액관해)과 [AI로 내 교재 만들기](ai/index.md)의 원칙이 여기서 왔습니다.
 
+## 연구·통계
+
+* Asim Kadav, Michael M. Swift, "Understanding Modern Device Drivers", ASPLOS '12, 2012. <https://pages.cs.wisc.edu/~kadav/app/papers/driverstudy.pdf>
+  — Linux 2.6.37.6의 드라이버 3,217개 분석. "드라이버가 리눅스 코드의 70%", 네트워크 드라이버는 드라이버 코드의 25%. [Part 4 §4.0](04-container.md)의 커널 코드 구성표와 비교.
+* heise online, "Linux breaks through the 40 million line mark", 2025-01-25. <https://www.heise.de/en/news/Linux-breaks-through-the-40-million-line-mark-10256571.html>
+
 ## 외부 표준·공식 문서
 
 | 주제 | 링크 |

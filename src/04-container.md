@@ -77,6 +77,8 @@ docker run --rm alpine ip addr
 - **네트워크를 합치면 약 18%**입니다. 프로토콜 스택(`net/`) + 네트워크 카드 드라이버(`drivers/net/`) + 네트워크 헤더(`include/net/`)가 680만 줄. 사람이 쓴 코드가 아닌 자동 생성 헤더(AMD GPU 레지스터 524만 줄)를 빼고 보면 **약 20%, 다섯 줄에 한 줄**이 네트워크입니다.
 - 그 헤더를 빼면 **드라이버 중 가장 큰 가족은 네트워크 카드**입니다(537만 줄, GPU는 349만 줄). 프로토콜 스택만 봐도 프로세스·스케줄러·메모리 관리를 합친 것보다 큽니다.
 
+**이 비율은 15년째 그대로입니다.** 위스콘신대의 드라이버 연구([Kadav & Swift, 「Understanding Modern Device Drivers」, ASPLOS 2012](https://pages.cs.wisc.edu/~kadav/app/papers/driverstudy.pdf))는 Linux 2.6.37.6(2011년 4월)을 분석해 "장치 드라이버가 리눅스 코드의 **70%**"이고, 드라이버 코드 중 **네트워크 드라이버가 25%**라고 보고했습니다. 위 표(2026년)도 드라이버 69%, 자동 생성 헤더를 뺀 드라이버 중 네트워크 카드 드라이버 25%(537만 / 2,153만 줄)로 거의 같습니다. 커널 전체 크기로는 문서·장치 트리 등 모든 파일을 합쳐 2025년 초에 처음으로 4천만 줄을 넘었고, 그 절반 이상이 드라이버라는 보도도 있습니다([heise, 「Linux breaks through the 40 million line mark」, 2025-01-25](https://www.heise.de/en/news/Linux-breaks-through-the-40-million-line-mark-10256571.html)). 기준(어떤 파일을 세나)에 따라 숫자는 조금씩 달라지니, 위 표는 아래 명령으로 누구나 다시 셀 수 있게 해 두었습니다.
+
 그만큼 기능도, 규칙도, 함정도 많습니다. 컨테이너가 이 스택을 한 벌씩 따로 갖고, 그 사이를 브리지·NAT·방화벽 규칙으로 잇다 보니 [실습③](labs/lab-03.md)의 "ufw가 왜 뚫리지", [⑨′](labs/lab-09p.md)의 egress, [4.5](#45-이미지-빌드--dockerfile-비루트non-root-멀티스테이지-대역-겹침)의 대역 겹침 같은 문제가 생깁니다.
 
 ```bash
@@ -321,7 +323,7 @@ docker compose down -t 0
 
 ⚠️ 환경변수는 **비밀을 두기에 좋은 곳이 아닙니다.** `docker` 권한이 있는 사람은 누구나 `docker inspect`로 평문을 보고, 컨테이너 안에서는 `/proc/1/environ`으로 보입니다. 비밀번호·토큰은 읽기 전용으로 마운트한 파일로 넘기는 편이 낫습니다(많은 공식 이미지가 `POSTGRES_PASSWORD_FILE`처럼 `_FILE` 변수를 지원합니다).
 
-더 깊이: [namespaces(7)](https://man7.org/linux/man-pages/man7/namespaces.7.html), [cgroups(7)](https://man7.org/linux/man-pages/man7/cgroups.7.html), [fork(2)](https://man7.org/linux/man-pages/man2/fork.2.html), [execve(2)](https://man7.org/linux/man-pages/man2/execve.2.html), [environ(7)](https://man7.org/linux/man-pages/man7/environ.7.html), [Docker Compose: 환경변수 우선순위와 .env](https://docs.docker.com/compose/how-tos/environment-variables/).
+더 깊이: [Kadav & Swift, 「Understanding Modern Device Drivers」, ASPLOS 2012](https://pages.cs.wisc.edu/~kadav/app/papers/driverstudy.pdf), [namespaces(7)](https://man7.org/linux/man-pages/man7/namespaces.7.html), [cgroups(7)](https://man7.org/linux/man-pages/man7/cgroups.7.html), [fork(2)](https://man7.org/linux/man-pages/man2/fork.2.html), [execve(2)](https://man7.org/linux/man-pages/man2/execve.2.html), [environ(7)](https://man7.org/linux/man-pages/man7/environ.7.html), [Docker Compose: 환경변수 우선순위와 .env](https://docs.docker.com/compose/how-tos/environment-variables/).
 
 ## 4.1 컨테이너 vs VM — 과잉설계 경계
 
