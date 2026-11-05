@@ -35,14 +35,40 @@
 
 ## 줄기 넷 — 실습끼리 이어지는 길
 
-실습은 서로 독립적이지만, 함께 보면 더 잘 보이는 줄기가 있습니다.
+실습은 서로 독립적이지만, 함께 보면 더 잘 보이는 줄기가 있습니다. 상자를 누르면 그 실습으로 갑니다. 🔒 줄기는 이 책의 등뼈 — "나가는 길(egress)을 어느 고도에서 막는가"입니다.
 
-```
-🧯 만들고 되살리기      ① 이미지 ──→ ② 배포·복원
-🚪 들어오는 길 막기     ③ ufw ──→ ④ firewalld ──→ ⑤ 평판 차단
-🔒 나가는 길 막기       ⑥ 호스트 ──→ ⑨′ 컨테이너 ──→ ⑧ 망 경계 ──→ ⑭ AI
-                          (이 책의 등뼈: "egress를 어느 고도에서 막는가")
-🔑 누가 들어오나        ⑦ VPN ──→ ⑩ 인증서 ──→ ⑪ 프라이빗 CA ──→ ⑫ 로그인
+```mermaid
+flowchart TB
+  subgraph T1["🧯 만들고 되살리기"]
+    direction LR
+    L01["① 이미지"] --> L02["② 배포·복원"]
+  end
+  subgraph T2["🚪 들어오는 길 막기"]
+    direction LR
+    L03["③ ufw"] --> L04["④ firewalld"] --> L05["⑤ 평판 차단"]
+  end
+  subgraph T3["🔒 나가는 길 막기 (등뼈)"]
+    direction LR
+    L06["⑥ 호스트"] --> L09p["⑨′ 컨테이너"] --> L08["⑧ 망 경계"] --> L14["⑭ AI"]
+  end
+  subgraph T4["🔑 누가 들어오나"]
+    direction LR
+    L07["⑦ VPN"] --> L10["⑩ 인증서"] --> L11["⑪ 프라이빗 CA"] --> L12["⑫ 로그인"]
+  end
+  T1 ~~~ T2 ~~~ T3 ~~~ T4
+  click L01 "labs/lab-01.html"
+  click L02 "labs/lab-02.html"
+  click L03 "labs/lab-03.html"
+  click L04 "labs/lab-04.html"
+  click L05 "labs/lab-05.html"
+  click L06 "labs/lab-06.html"
+  click L09p "labs/lab-09p.html"
+  click L08 "labs/lab-08.html"
+  click L14 "labs/lab-14.html"
+  click L07 "labs/lab-07.html"
+  click L10 "labs/lab-10.html"
+  click L11 "labs/lab-11.html"
+  click L12 "labs/lab-12.html"
 ```
 
 ## 정해 둔 코스 (골라 쓰기)

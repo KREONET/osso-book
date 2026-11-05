@@ -192,13 +192,22 @@ ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no host
 
 **로그인은 앱이 받지 않고, 문지기가 받습니다.** 건물마다 경비실을 짓는 대신 출입문에 경비 하나를 세우는 구조입니다. 앱은 "누가 들어왔는지"만 헤더로 전달받습니다.
 
-```
-브라우저 ─▶ reverse proxy ─(이 요청 통과시켜도 돼?)─▶ oauth2-proxy
-                │                                         │
-                │◀──── 202 OK + 사용자 헤더 ──────────────┤ (세션 쿠키 있음)
-                │◀──── 401/302 → IdP 로그인 ──────────────┘ (없음)
-                ▼
-               앱 (인증 코드 없음, X-Auth-Request-User 헤더만 읽음)
+```mermaid
+sequenceDiagram
+  participant B as 브라우저
+  participant R as reverse proxy
+  participant O as oauth2-proxy
+  participant A as 앱
+  B->>R: 요청
+  R->>O: 이 요청 통과시켜도 돼?
+  alt 세션 쿠키 있음
+    O-->>R: 202 OK + 사용자 헤더
+    R->>A: 요청 + X-Auth-Request-User
+    Note over A: 인증 코드 없음 — 헤더만 읽는다
+  else 없음
+    O-->>R: 401
+    R-->>B: 302 → IdP 로그인
+  end
 ```
 
 핵심은 `forward_auth`(nginx는 `auth_request`)입니다. 프록시가 요청을 앱에 넘기기 **전에** "이 요청을 통과시켜도 되나?"를 oauth2-proxy에 먼저 묻고, 아니면 로그인으로 돌려보냅니다. 보호된 경로는 프록시가 **가로채서** 로그인을 강제하므로, 앱은 수정할 필요가 없습니다.

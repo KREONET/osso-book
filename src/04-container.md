@@ -140,13 +140,15 @@ srw-rw---- 1 root docker 0 … /var/run/docker.sock
 
 셸에서 `sleep 3`을 치면 이런 일이 일어납니다.
 
-```
-bash (PID 100)
-  │ ① fork  — 자기 자신을 복제한다 → bash (PID 101), 부모는 100
-  │ ② exec  — 101번이 자기 몸을 /usr/bin/sleep 프로그램으로 갈아 끼운다
-  │ ③ wait  — 100번(셸)은 101번이 끝나길 기다린다
-  ▼
-101번 종료 → 셸이 다시 프롬프트를 띄운다
+```mermaid
+sequenceDiagram
+  participant S as bash (PID 100)
+  participant C as 자식 (PID 101)
+  S->>C: ① fork — 자기 자신을 복제한다 (부모는 100)
+  Note over C: ② exec — 자기 몸을 /usr/bin/sleep으로 갈아 끼운다
+  Note over S: ③ wait — 101번이 끝나길 기다린다
+  C-->>S: 종료
+  Note over S: 프롬프트를 다시 띄운다
 ```
 
 POSIX의 `fork`는 지금 프로세스를 **메모리까지 통째로 복제**합니다(실제로는 바로 복사하지 않고, 둘 중 하나가 쓰려고 할 때 그 부분만 복사하는 copy-on-write라서 빠릅니다). 그다음 `exec`가 그 복제본의 내용을 **새 프로그램으로 갈아 끼웁니다.** 프로그램을 띄우는 일이 언제나 "복제 → 갈아 끼우기"라서, 모든 프로세스에는 **부모**가 있고, 그래서 프로세스는 **트리**가 됩니다.
@@ -485,11 +487,9 @@ docker build -t myapp:1.0 . && docker run --rm -p 8000:8000 myapp:1.0
 
 **멘탈모델.** 컨테이너의 "나갈 수 있는 곳"은 방화벽 규칙이 아니라 **어느 네트워크에 붙어 있느냐**로 정해진다. compose의 `networks:` 목록이 곧 *허용 목록*이다. 이것이 SADP의 outbound 통제를 백엔드에 적용한 모습이다([실습⑨′](labs/lab-09p.md)).
 
-```text
-              인터넷
-                 |
-   [edge]  ──── caddy ──── [web, internal] ──── app ──── [data, internal] ──── db
- (egress 가능)                (인터넷 차단)                  (인터넷 차단)
+```mermaid
+flowchart LR
+  I(("인터넷")) --- E(["edge 네트워크<br/>egress 가능"]) --- C["caddy"] --- W(["web 네트워크<br/>internal · 인터넷 차단"]) --- A["app"] --- D(["data 네트워크<br/>internal · 인터넷 차단"]) --- DB[("db")]
 ```
 
 ```yaml

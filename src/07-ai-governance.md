@@ -109,14 +109,12 @@ isolated1~3 을 ssh로 돌며 아래를 표로 정리해줘.
 
 ### 흐름
 
-```text
-   .env (chmod 600)
-      │  docker compose 가 읽음
-      ▼
-   컨테이너 환경변수 / secrets   ← 앱은 비번을 쓴다
-   
-   LLM ── "compose up 해줘" ──▶ 도구 실행 (값은 LLM에게 되돌아오지 않음)
-      ✗  Read(.env) 는 설정에서 거부
+```mermaid
+flowchart TB
+  E[".env<br/>chmod 600"] -- "docker compose가 읽음" --> C["컨테이너 환경변수 / secrets<br/>앱은 비번을 쓴다"]
+  L["LLM"] -- "compose up 해줘<br/>(값은 LLM에게 되돌아오지 않음)" --> T["도구 실행"]
+  T --> E
+  L -- "Read(.env) — 설정에서 거부" --x E
 ```
 
 LLM이 하는 일은 `docker compose up -d`를 실행하는 것까지입니다. 명령 출력에 비밀이 섞여 나오지 않는 한, 값은 대화에 등장하지 않습니다.

@@ -18,12 +18,10 @@
 
 여기서 1번의 "내가 아는 뿌리"가 곧 **키스토어(트러스트 스토어)** 입니다. OS나 브라우저가 미리 들고 있는 루트 인증서 목록입니다.
 
-```text
-[서버 인증서]  srv.lab.local
-      ↑ 서명
-[중간 CA]      Example Issuing CA
-      ↑ 서명
-[루트 CA]      Example Root CA   ← 내 키스토어에 있으면 "신뢰", 없으면 "⚠️ 경고"
+```mermaid
+flowchart TB
+  R["루트 CA<br/>Example Root CA"] -- "서명" --> M["중간 CA<br/>Example Issuing CA"] -- "서명" --> L["서버 인증서<br/>srv.lab.local"]
+  K["내 키스토어"] -. "루트가 여기 있으면 신뢰, 없으면 ⚠️ 경고" .-> R
 ```
 
 ### 왜 이게 전부인가
@@ -204,12 +202,10 @@ curl https://srv.lab.local/
 
 회사의 **TLS 복호화(DPI, Deep Packet Inspection) 장비**는 정확히 이 원리로 동작합니다.
 
-```text
-브라우저 ──TLS①──▶ [보안 장비] ──TLS②──▶ 실제 서버 (danawa.com 등)
-            ↑                      ↑
-   장비가 자기 CA로          장비가 클라이언트로서
-   "danawa.com" 인증서를      진짜 서버와 연결
-   즉석에서 만들어 서명
+```mermaid
+flowchart LR
+  B["브라우저"] -- "TLS ①<br/>장비가 자기 CA로 danawa.com 인증서를<br/>즉석에서 만들어 서명" --> D["보안 장비"]
+  D -- "TLS ②<br/>장비가 클라이언트로서<br/>진짜 서버와 연결" --> S["실제 서버<br/>danawa.com 등"]
 ```
 
 1. 내 브라우저가 `https://example.com` 으로 나갑니다.
@@ -268,9 +264,17 @@ echo | openssl s_client -connect example.com:443 -servername example.com 2>/dev/
 
 **mTLS(mutual TLS)** 는 이걸 대칭으로 만듭니다.
 
-```text
-일반 HTTPS : 클라이언트 ──"네 신분증?"──▶ 서버   (서버만 인증서 제시)
-mTLS       : 클라이언트 ◀─"네 신분증도"─▶ 서버   (양쪽이 인증서 제시)
+```mermaid
+sequenceDiagram
+  participant C as 클라이언트
+  participant S as 서버
+  Note over C,S: 일반 HTTPS — 서버만 인증서를 낸다
+  C->>S: "네 신분증?"
+  S-->>C: 서버 인증서
+  Note over C,S: mTLS — 양쪽 다 인증서를 낸다
+  C->>S: "네 신분증?"
+  S-->>C: 서버 인증서 + "네 신분증도"
+  C-->>S: 클라이언트 인증서
 ```
 
 서버는 "**내가 신뢰하는 CA가 발급한 클라이언트 인증서를 가진 기기만**" 연결을 허락합니다. 인증서가 없으면 **TLS 핸드셰이크 단계에서** 끊깁니다. 애플리케이션까지 요청이 닿지도 못합니다.

@@ -80,9 +80,11 @@ sudo nft list ruleset | less
 
 규칙의 의미는 *어느 훅에 걸려 있느냐*로 정해집니다. 외부에서 호스트 `203.0.113.10:80`으로 SYN이 들어오면:
 
-```text
-수신 → [nat PREROUTING: DNAT]  →  라우팅 결정  ─┬→ 목적지가 이 호스트  → INPUT   (ufw의 구역)
-                                                └→ 목적지가 다른 곳    → FORWARD (ufw는 사실상 관심 밖)
+```mermaid
+flowchart LR
+  A["수신"] --> B["nat PREROUTING<br/>DNAT"] --> C{"라우팅 결정"}
+  C -- "목적지가 이 호스트" --> D["INPUT<br/>ufw의 구역"]
+  C -- "목적지가 다른 곳" --> E["FORWARD<br/>ufw는 사실상 관심 밖"]
 ```
 
 1. Docker는 publish한 포트(`-p 80:80`)마다 **nat PREROUTING**에 DNAT 규칙을 심습니다. 목적지가 `203.0.113.10:80`에서 `172.17.0.2:80`(컨테이너)으로 **바뀝니다**.
@@ -190,9 +192,11 @@ sudo grep -n "BEGIN UFW AND DOCKER" -A25 /etc/ufw/after.rules
 
 [실습④](labs/lab-04.md)의 마지막 문단("zone 규칙이 Docker publish 포트엔 안 먹는다")의 속사정입니다.
 
-```text
-클라이언트 → zone 분류(source→partners) ─┬→ INPUT (egress=HOST)   : native 앱 :8080   ← zone 규칙
-                                          └→ DNAT 8080→80 → FORWARD (egress=docker) : 컨테이너 :80 ← policy
+```mermaid
+flowchart LR
+  A["클라이언트"] --> Z{"zone 분류<br/>source → partners"}
+  Z --> I["INPUT (egress=HOST)<br/>native 앱 :8080<br/>zone 규칙이 적용"]
+  Z -- "DNAT 8080→80" --> F["FORWARD (egress=docker)<br/>컨테이너 :80<br/>policy가 적용"]
 ```
 
 ### 왜 문서가 헷갈리는가
@@ -303,13 +307,12 @@ docker run --rm alpine wget -qO- https://deb.debian.org >/dev/null && echo OK
 
 이 책의 도구는 KREONET의 [republock](https://github.com/KREONET/republock)입니다(MIT 라이선스). 자기 nftables 테이블을 따로 만들고 **priority -150**에서 동작하므로, fail2ban(-1)이나 ufw(0)보다 먼저 패킷을 봅니다.
 
-```text
-들어오는 패킷
-  └─ [inet republock]    priority -150   ← 가장 먼저
-        ├ 루프백 · 관리자 대역(ADMIN_NETS) · 이미 맺어진 연결 → 통과
-        └ 출발지가 @spammers · @abuseipdb · @asndrop (· 국가) 에 있으면 → drop
-  └─ [inet f2b-table]    priority -1      (fail2ban이 밴한 IP)
-  └─ [ip filter INPUT]   priority 0       (ufw 규칙)
+```mermaid
+flowchart TB
+  P["들어오는 패킷"] --> R["inet republock<br/>priority -150 — 가장 먼저"]
+  R -- "출발지가 목록에 있음<br/>@spammers · @abuseipdb · @asndrop · 국가" --> X["drop"]
+  R -- "통과<br/>목록에 없음, 또는 루프백 · ADMIN_NETS · 맺어진 연결" --> F["inet f2b-table<br/>priority -1 — fail2ban이 밴한 IP"]
+  F --> U["ip filter INPUT<br/>priority 0 — ufw 규칙"]
 ```
 
 기본 훅은 `prerouting`이라 호스트 서비스뿐 아니라 **Docker publish 포트로 가는 트래픽도** 거릅니다. INPUT에만 걸면 2.2의 함정(DNAT 뒤 FORWARD로 빠짐)을 그대로 밟습니다.
@@ -385,10 +388,9 @@ republock은 이런 현장에서 나왔습니다.
 
 그래서 **방화벽 앞단에 republock을 투명 브릿지로 끼웁니다**(`MODE=bridge`). 선 위에 끼어서 패킷을 그대로 넘기다가 평판이 나쁜 것만 떨어뜨리므로, 앞의 라우터도 뒤의 방화벽도 설정을 바꿀 필요가 없습니다. 기존 방화벽은 그대로 두고, 쓰레기를 미리 덜어 주는 것입니다.
 
-```text
-인터넷 ─ 라우터 ─[ republock 브릿지 ]─ CC 인증 방화벽 ─ 내부망
-                  10G NIC ↔ 10G NIC
-                  (IP 없음 · 매주 목록 자동 갱신)
+```mermaid
+flowchart LR
+  I(("인터넷")) --- R["라우터"] --- B["republock 브릿지<br/>10G NIC ↔ 10G NIC<br/>IP 없음 · 매주 목록 자동 갱신"] --- F["CC 인증 방화벽"] --- N["내부망"]
 ```
 
 장비는 거창할 필요가 없습니다. 강사의 경험으로는 **10년 된 서버에 10G NIC 두 장**, 또는 i5·i7급 PC에 10G NIC를 꽂은 정도면 충분했고, 비용은 50만 원 안쪽입니다. nftables의 set 조회가 가벼워서, 일반적인 기관 트래픽에서 10G는 여유롭게 처리합니다.
@@ -418,9 +420,10 @@ republock은 이런 현장에서 나왔습니다.
 - 직접 나가는 길은 전부 닫고, 허용하는 건 **squid 프록시(와 DNS)** 뿐입니다.
 - squid가 **allowlist(apt·yum·docker·ghcr 등 도메인)** 를 가집니다. IP가 아니라 *도메인 단위*로 허용하기 위해 프록시를 씁니다. 방화벽(L3/L4)만으론 "ghcr.io만"이 어렵기 때문입니다(CDN IP는 수시로 바뀝니다).
 
-```text
-서버 ─(허용: 프록시:3128, DNS:53만)→ squid ─(allowlist 도메인만)→ 인터넷
-서버 ─────────(그 외 모든 직접 연결 drop)────────✗
+```mermaid
+flowchart LR
+  S["서버"] -- "허용: 프록시 :3128<br/>DNS :53만" --> Q["squid"] -- "allowlist 도메인만" --> I(("인터넷"))
+  S -- "그 외 모든 직접 연결은 drop" --x I
 ```
 
 [실습⑥](labs/lab-06.md)의 핵심 명령은 다음과 같습니다(IP는 문서용 예시).
