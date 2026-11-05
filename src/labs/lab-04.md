@@ -20,5 +20,11 @@ sudo firewall-cmd --zone=trusted --list-all
 💡 **느낄 것:** 규칙을 포트 하나하나가 아니라 **"이 대역은 믿는다/안 믿는다"** 로 생각하게 된다. ufw(데비안계)와 firewalld(레드햇계)는 사고방식이 다르다.
   단, Docker publish 포트엔 zone 규칙이 안 먹는다 — 그건 FORWARD로 가니 **egress=docker인 policy**로, 호스트 포트가 아니라 **컨테이너 포트** 기준으로 막는다(③의 ufw 함정과 같은 뿌리).
 
-📖 심화: `ref/docker-firewalld-zones.html` — zone vs policy, `daemon.json` 대역 겹침.
+---
 
+🔀 **갈림길** — 다음엔 어디로?
+
+- 들어오는 쪽을 평판으로 미리 거르기 → [⑤ 인바운드 선차단](lab-05.md)
+- 이번엔 나가는 쪽을 막기 → [⑥ egress 화이트리스팅](lab-06.md)
+- zone과 policy, 도커와 firewalld → [Part 2](../02-firewall.md)
+- 길을 잃었다면 → [🗺️ 지도](../map.md)

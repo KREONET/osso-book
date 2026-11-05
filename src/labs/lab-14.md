@@ -30,6 +30,8 @@ docker exec app curl -I https://ghcr.io            # ✅ (allowlist)
 
 ---
 
-> **완료.** Day1 ①~⑧(머신·방화벽·VPN·원격) + Day2 ⑨~⑭(서비스·인증서·인증·AI).
+🔀 **갈림길** — 다음엔 어디로?
 
-> 다음 산출물: gitbook(mdBook) 이론 TOC, reveal.js 슬라이드 아웃라인.
+- 전체를 꿰는 그림 — SADP 4통제지점 → [Part 7](../07-ai-governance.md)
+- 배운 걸 우리 연구실에 써먹는 과제 만들기 → [AI로 내 교재 만들기: 우리 환경 과제](../ai/my-task.md)
+- 다른 줄기를 골라 다시 → [🗺️ 지도](../map.md)

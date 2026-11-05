@@ -23,5 +23,11 @@ curl -I http://localhost          # ← 이제 막힌다
 
 ⚠️ 기본 `after.rules`는 출발지 10/8·172.16/12·192.168/16을 무조건 통과시킨다 — 클라이언트가 사설망이면 여전히 열린 셈. 엄격히 하려면 그 줄을 좁힌다.
 
-📖 심화: `ref/docker-ufw-nftables.html` — nft 체인 3단계 추적.
+---
 
+🔀 **갈림길** — 다음엔 어디로?
+
+- RHEL·Rocky 계열이라 firewalld를 쓴다면 → [④ firewalld](lab-04.md)
+- 들어오는 쪽을 평판으로 미리 거르기 → [⑤ 인바운드 선차단](lab-05.md)
+- 왜 우회되나 — DNAT·FORWARD·DOCKER-USER 체인 → [Part 2](../02-firewall.md)
+- 길을 잃었다면 → [🗺️ 지도](../map.md)

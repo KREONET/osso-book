@@ -47,3 +47,11 @@ docker compose exec caddy ping -c2 8.8.8.8    # ← caddy는 여전히 OK (edge)
 
 ⚠️ `ping` 테스트엔 app 이미지에 `iputils-ping` 필요(없으면 `getent hosts caddy`/`curl -m3`로 대체) — **손놀림④에서 구울 때 심어둔다**.
 
+---
+
+🔀 **갈림길** — 다음엔 어디로?
+
+- 같은 egress를 망 경계 고도에서 → [⑧ 망간접점·bastion](lab-08.md)
+- 이 서비스를 https로 밖에 공개하려면 → [⑩ 진짜 인증서](lab-10.md)
+- 네트워크 멤버십이 곧 허용목록인 이유 → [Part 4](../04-container.md)
+- 길을 잃었다면 → [🗺️ 지도](../map.md)

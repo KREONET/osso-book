@@ -1,6 +1,7 @@
 # Summary
 
 [들어가며](00-intro.md)
+[🗺️ 지도 — 어디서부터 볼까](map.md)
 
 # 1부 · 실습 — Day 1 (머신·방화벽·VPN·원격접속)
 
@@ -42,3 +43,12 @@
 - [D. 명령어 치트시트 (Runbook)](D-cheatsheet.md)
 - [E. 참고자료](E-references.md)
 - [F. 용어집](F-glossary.md)
+
+# AI로 내 교재 만들기
+
+- [시작하기](ai/index.md)
+  - [내 경로 고르기](ai/route.md)
+  - [실습 뒤 복습](ai/review.md)
+  - [우리 환경 과제](ai/my-task.md)
+  - [오디오북](ai/audio.md)
+  - [폰 카드](ai/cards.md)

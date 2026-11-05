@@ -62,3 +62,10 @@ ssh lanvm hostname             # bastion을 자동 경유해 격리 LAN VM 진�
 
 ---
 
+🔀 **갈림길** — 다음엔 어디로?
+
+- egress를 AI 고도에서 → [⑭ AI 배포 캡스톤](lab-14.md)
+- 서비스를 띄워 보는 2일차로 → [⑨ compose](lab-09.md)
+- ssh 키·bastion·접근 통제 → [Part 6](../06-access.md)
+- 듀얼홈·격리망의 원리 → [Part 3](../03-network.md)
+- 길을 잃었다면 → [🗺️ 지도](../map.md)
