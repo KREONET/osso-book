@@ -1,0 +1,18 @@
+[book]
+title = "오픈소스 서버·서비스 안전운영 실습 — 심화 핸드북"
+authors = ["KREONET 과학데이터교육센터"]
+language = "ko"
+src = "src"
+
+[output.html]
+default-theme = "rust"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/KREONET/osso-book"
+edit-url-template = "https://github.com/KREONET/osso-book/edit/main/{path}"
+
+[output.html.search]
+enable = true
+
+[output.html.fold]
+enable = true
+level = 1

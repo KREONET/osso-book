@@ -1,0 +1,3 @@
+# 부록 F. 용어집
+CCE/CVE · DNAT · HTTP-01/DNS-01 · mTLS · machine-id · egress …
+> 📝 작성 예정.

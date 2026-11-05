@@ -1,0 +1,3 @@
+# 부록 A. 자산 카탈로그
+sadp · republock · caddy-xproxy · saml-oidc · ufw-docker · isetup · ohmyzsh · miniforge · marimo · adr …
+> 📝 작성 예정.
