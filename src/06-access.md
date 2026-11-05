@@ -152,12 +152,15 @@ PermitRootLogin no
 # /etc/ssh/sshd_config.d/02-match.conf
 Match Address 10.10.1.0/24
     PasswordAuthentication no
+# 점프 전용 계정: ProxyJump는 bastion의 TCP 포워딩으로 동작한다
 Match User jump
     AllowTcpForwarding yes
+    # 이어 줄 수 있는 목적지는 ssh 포트로만
+    PermitOpen *:22
     X11Forwarding no
 ```
 
-`Match` 블록은 조건(주소, 사용자, 그룹)에 맞는 접속에만 다른 규칙을 적용합니다. bastion([실습⑧](labs/lab-08.md))에서는 "점프 전용 계정은 포워딩만 허용" 같은 식으로 씁니다.
+`Match` 블록은 조건(주소, 사용자, 그룹)에 맞는 접속에만 다른 규칙을 적용합니다. bastion([실습⑧](labs/lab-08.md))에서는 "점프 전용 계정은 포워딩만 허용" 같은 식으로 씁니다. `ProxyJump`는 bastion 입장에서 TCP 포워딩이므로, 전역에 `AllowTcpForwarding no`(보안 강화 가이드의 흔한 항목)가 있으면 점프가 `administratively prohibited`로 막힙니다. 이렇게 계정 단위로 다시 열어 줍니다. `Match`가 적용된 최종 값은 `sudo sshd -T -C user=jump,host=x,addr=⟨IP⟩`로 확인합니다.
 
 ### 확인 커맨드: 끊기 전에 검증
 

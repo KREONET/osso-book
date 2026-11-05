@@ -29,7 +29,7 @@
 | OIDC | OpenID Connect. OAuth 2.0 위의 로그인(인증) 표준. |
 | ohmyzsh 태그 (TAG1/TAG2) | 물리 서버의 `/etc/tag1`(모델)·`/etc/tag2`(자산 ID)를 프롬프트에 표시하는 강사 개인 컨벤션. 소개만 하고 실습하지 않는다. |
 | 호스트명 규칙 | VM 구분용 이름 짓기 예: `⟨IP 끝자리 3자리⟩-⟨OS약어⟩-⟨용도⟩` (예: `042-u24-web`). |
-| ProxyJump | `ssh -J`. 중간 서버(bastion)를 경유해 대상에 접속한다. |
+| ProxyJump | `ssh -J`. 중간 서버(bastion)를 경유해 대상에 접속한다. bastion sshd의 `AllowTcpForwarding`이 허용돼 있어야 한다. |
 | PUEL | VirtualBox Extension Pack의 라이선스. 개인·평가용만 무료, 기관은 유료. → [부록 B](B-licenses.md) |
 | SNAT | 출발지 주소 변환. 내부 대역이 외부로 나갈 때(masquerade) 쓴다. |
 | SSPL | MongoDB 등이 쓴 Server Side Public License. 서비스 제공 시 소스 공개 의무, OSI 비승인. |

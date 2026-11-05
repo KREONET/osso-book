@@ -237,6 +237,8 @@ Host lanvm
 
 `ProxyJump`(`-J`)는 bastion에 **셸을 주지 않고** TCP 포워딩만 하도록 쓸 수 있습니다. 내 키는 내 컴퓨터를 떠나지 않고, 최종 목적지와 종단 간 암호화가 유지됩니다. 옛 방식인 *에이전트 포워딩(`-A`)* 은 bastion 관리자에게 내 인증 능력을 빌려주는 셈이라 피하는 편이 좋습니다.
 
+**점프는 bastion이 허락해야 됩니다.** `ProxyJump`는 bastion의 sshd에게 "목적지까지 TCP를 이어 달라"고 요청하는 것(sshd 입장에서는 TCP 포워딩)입니다. 그래서 bastion의 `sshd_config`에서 **`AllowTcpForwarding`이 허용**돼 있어야 합니다. 기본값은 `yes`지만, 보안 강화 가이드를 따라 `AllowTcpForwarding no`나 `DisableForwarding yes`를 넣은 서버에서는 `administratively prohibited`로 실패합니다. 이때 전체를 다시 열지 말고 `Match User jump`로 점프 전용 계정에만 열고, `PermitOpen *:22`로 이어 줄 목적지를 ssh 포트로 좁힙니다([실습⑧](labs/lab-08.md), [Part 6](06-access.md)). 반대로 셸은 막아도 점프는 됩니다. 점프는 셸 세션을 열지 않기 때문입니다.
+
 **확인.**
 
 ```bash

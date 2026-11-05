@@ -55,6 +55,32 @@ ssh-import-id lp:⟨myid⟩
 👀 **보이는 것:** 격리 VM `curl https://⟨아무사이트⟩`가 평소 **타임아웃** → 임시 규칙 켜면 **통과** → 끄면 다시 막힘. 허용 목록(업데이트 등)은 항상 됨.
 
 ⌨️ **(B) 듀얼홈 bastion — 외부에서 격리 VM으로 가는 유일한 문**
+
+먼저 **bastion 쪽**에서 점프를 허용하는지 본다. `ProxyJump`는 bastion에 셸로 들어가는 게 아니라 bastion의 sshd에게 "이 주소로 TCP를 이어 줘"라고 부탁하는 것이다. 그래서 bastion sshd의 **TCP 포워딩이 허용**돼 있어야 한다.
+```bash
+# (bastion에서) 지금 실제로 적용되는 값 — jump 계정 기준으로
+sudo sshd -T -C user=jump,host=x,addr=⟨내 PC IP⟩ | grep -Ei 'allowtcpforwarding|disableforwarding|permitopen'
+# 점프 전용 계정에만 포워딩을 열고, 갈 수 있는 곳은 ssh(22)로 좁힌다
+sudo tee /etc/ssh/sshd_config.d/10-jump.conf <<'EOF'
+# 실습⑧: ProxyJump 허용 — 점프 전용 계정만
+Match User jump
+    AllowTcpForwarding yes
+    # 점프로 이어 줄 수 있는 목적지: 어느 호스트든 22번만
+    PermitOpen *:22
+EOF
+sudo sshd -t && sudo systemctl reload sshd
+```
+
+> 기본값은 `AllowTcpForwarding yes`라 갓 설치한 서버는 그냥 된다. 문제는 **보안 강화 가이드대로 조인 서버**다. 점검 항목에 따라 `AllowTcpForwarding no`나 `DisableForwarding yes`가 들어가 있으면 점프가 이렇게 실패한다.
+>
+> ```text
+> channel 0: open failed: administratively prohibited: open failed
+> stdio forwarding failed
+> ```
+>
+> 이 메시지를 보면 내 PC가 아니라 **bastion의 sshd 설정**을 본다. 전체를 다시 열지 말고 위처럼 `Match`로 점프 계정에만 연다.
+
+그다음 **내 쪽** 설정:
 ```bash
 # bastion은 vmbr0(외부)·vmbr1(내부) 둘 다 꽂힌 멀티홈드 Rocky VM.
 # ★ 멀티홈드 원칙: default route는 vmbr0 쪽 하나만, 내부 대역(10.10.1.0/24)은 vmbr1로 명시 라우트.
@@ -73,7 +99,7 @@ EOF
 ssh lanvm hostname
 ```
 
-👀 **보이는 것:** 격리 VM에 직접 `ssh`는 실패(경로 없음) → `ssh lanvm`은 bastion을 거쳐 성공.
+👀 **보이는 것:** `sshd -T`에 `allowtcpforwarding yes`·`permitopen *:22`. 격리 VM에 직접 `ssh`는 실패(경로 없음) → `ssh lanvm`은 bastion을 거쳐 성공. (해 보고 싶다면: `10-jump.conf`에서 `yes`를 `no`로 바꾸고 reload → 같은 명령이 `administratively prohibited`로 실패.)
 
 💡 **느낄 것:** 격리망을 쓰려면 **나가는 길**과 **들어오는 문**을 각각 통제한다. egress는 평소 잠그고 필요할 때만 토글(폐쇄망 조이기), 진입은 bastion **한 곳**으로 좁힌다(망간접점). 이 둘이 "격리망을 두되 안전하게 쓰는" 실체. ⑥(호스트 하나)에서 ⑧(망 전체 경계)로 사고가 올라간다.
 
