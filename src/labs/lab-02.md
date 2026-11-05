@@ -25,6 +25,27 @@ sudo cp gparted-q.iso clonezilla.iso ⟨image.img⟩ /mnt/ ; sync
 
 💡 뭘 날리기 전에 **클론 = undo 버튼**부터 만든다.
 
+> 💾 **클론·백업을 빠르게 — thin + discard.** thin 저장소(LVM-thin·ZFS·qcow2)는 쓴 만큼만 차지하고, 클론·백업도 **쓰인 블록만** 복사하니 빠르다. 그런데 게스트 안에서 파일을 지워도 저장소는 그 사실을 모른다. 공간은 안 돌아오고, 지운 데이터까지 계속 복사된다. 그래서 VM 디스크에 **Discard**를 켜고, 게스트가 TRIM으로 "여기 비었다"고 알려 주게 한다. (랩 VM은 미리 켜 두었다 — 확인만.)
+
+```
+VM > Hardware > Hard Disk > Edit > ☑ Discard  ☑ SSD emulation
+→ VM을 완전히 껐다 켜야 적용된다 (게스트 안 reboot로는 안 됨)
+VM > Options > QEMU Guest Agent > ☑ Run guest-trim after a disk move or VM migration
+```
+
+```bash
+# 게스트 안: 주기적 TRIM 타이머가 켜져 있나 (꺼져 있으면 아래 enable)
+systemctl status fstrim.timer
+sudo systemctl enable --now fstrim.timer
+# 지금 바로 한 번 비우기 — 파일시스템마다 비운 양이 나온다
+sudo fstrim -av
+```
+
+```bash
+# PVE 호스트: 실제로 차지하는 양 (LVM-thin이면 Data% 가 줄어든다)
+sudo lvs
+```
+
 ⌨️ **ⓒ 재난 — 메인 디스크 날리고 부팅** (PVE 웹)
 ```
 VM > Hardware > 메인 디스크 선택 > Detach → Remove

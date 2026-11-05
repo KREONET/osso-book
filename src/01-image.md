@@ -44,6 +44,12 @@ qemu-img convert -O raw ⟨in.qcow2⟩ ⟨out.raw⟩
 
 `info`의 *virtual size*(게스트가 보는 크기)와 *disk size*(파일이 실제 차지하는 크기)가 다르면 thin입니다.
 
+**thin은 discard와 한 쌍입니다.** thin 디스크는 "쓴 만큼" 커지지만, 저절로 줄어들지는 않습니다. 게스트에서 파일을 지우면 파일시스템은 그 블록을 빈칸으로 표시할 뿐, 아래 저장소에는 아무 말도 하지 않습니다. 그러면 지운 데이터가 저장소에 계속 남아 공간을 차지하고, 클론과 백업이 그 죽은 블록까지 복사합니다. 초과 약정한 thin 풀이 "아무도 안 쓰는 데이터"로 꽉 차는 사고도 여기서 납니다.
+
+해결책은 게스트가 **TRIM**("이 블록 이제 안 씀")을 보내고, 그 신호가 끝까지 내려가게 하는 것입니다. 게스트 파일시스템 → 가상 디스크 컨트롤러(VirtIO SCSI의 UNMAP) → QEMU → 저장소(LVM-thin의 블록 반납, qcow2·ZFS의 구멍 뚫기) 순서입니다. 이 사슬이 이어지려면 하이퍼바이저에서 VM 디스크의 **discard 옵션**을 켜야 합니다(Proxmox는 디스크의 *Discard*, 게스트가 SSD로 인식해 TRIM을 보내도록 *SSD emulation*도 함께). 그다음 게스트에서 TRIM을 보냅니다. 방법은 두 가지입니다. 주기적으로 한꺼번에 보내는 `fstrim.timer`(권장. Ubuntu·Debian은 기본으로 켜져 있지만 배포판마다 다르니 `systemctl status fstrim.timer`로 확인)와, 지울 때마다 보내는 마운트 옵션 `discard`(즉시 반영되지만 삭제가 잦으면 느려짐)입니다. 그러면 비어 있는 블록은 저장소에서 진짜로 사라지고, 백업할 때는 0으로 읽혀 압축·중복제거에서 거의 공짜가 됩니다. **thin을 쓰는 이유인 "빠른 백업·복원"이 discard까지 켜야 완성되는** 셈입니다. [실습②ⓑ](labs/lab-02.md)에서 클론 전에 이걸 확인합니다.
+
+이미지 파일에도 같은 일이 있습니다. 골든 이미지를 패치하면서 지운 패키지 캐시가 이미지 안에 남아 크기를 불립니다. 이때는 오프라인 도구 `virt-sparsify --in-place ⟨image.qcow2⟩`가 빈 블록을 찾아 이미지를 다시 얇게 만듭니다. 1.3의 libguestfs 도구 모음에 들어 있습니다.
+
 더 깊이: [QEMU qcow2 스펙](https://www.qemu.org/docs/master/interop/qcow2.html), [qemu-img 매뉴얼](https://www.qemu.org/docs/master/tools/qemu-img.html), [DMTF OVF 표준](https://www.dmtf.org/standards/ovf).
 
 ## 1.3 끄고 고치기 — libguestfs와 오프라인이 안전한 이유
