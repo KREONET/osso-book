@@ -64,7 +64,28 @@ virt-cat -a ⟨image.img⟩ /etc/os-release     # 파일 한 개 뽑기
 
 보안 디테일 하나. 비번을 `--root-password password:평문`으로 쓰면 셸 히스토리와 `ps`에 남습니다. `--root-password file:pass.txt`로 파일에서 읽히고(`chmod 600`), 끝나면 `shred -u`로 지웁니다. 그 파일은 저장소에 커밋하지 않습니다.
 
-더 깊이: [libguestfs 문서](https://libguestfs.org/guestfs.3.html), [virt-customize](https://libguestfs.org/virt-customize.1.html), [qemu-nbd](https://www.qemu.org/docs/master/tools/qemu-nbd.html).
+### 고치기보다 얹기 — 드롭인(.d)과 파일로서의 설정
+
+**멘탈모델:** 리눅스 설정을 바꾸는 가장 안전한 방법은 *원본 파일을 편집하는 것*이 아니라 **조각 파일 하나를 놓는 것**이다.
+
+윈도우는 설정을 레지스트리라는 하나의 불투명한 바이너리 하이브에 넣습니다. `diff`로 비교할 수도, git에 올릴 수도, "이 한 줄만 바꿨다"를 떼어 보여줄 수도 없습니다. 리눅스는 반대입니다. 설정은 **평문 파일**이고, 많은 서비스가 큰 설정 파일 하나가 아니라 그 파일이 작은 조각들을 **불러오는(include)** 구조를 씁니다. 그 조각들이 모인 곳이 `*.d/` 디렉터리입니다.
+
+```bash
+grep -v '#' /etc/ssh/sshd_config | uniq       # 주석 걷어내고 '실제 설정'만
+# → 흔히:  Include /etc/ssh/sshd_config.d/*.conf
+```
+
+이 `Include`가 있으면, 원본 `sshd_config`를 `sed`로 깎을 이유가 없습니다. `*.d/`에 `60-lab.conf` 한 장을 **복사해 넣으면** 됩니다. 두 방식의 차이가 운영에서 큽니다. `sed`는 상태 의존적입니다 — "그 줄이 있나? 이미 주석 처리됐나? 두 번 돌리면 중복되나?"를 매번 따져야 하고, 배포판이 원본 포맷을 바꾸면 깨집니다. **복사는 멱등**입니다. 몇 번을 해도 결과가 같고, 내가 바꾼 것이 조각 파일 하나로 또렷이 남아 `diff`·git·리뷰에 그대로 올라갑니다. 원본은 배포판이 주는 대로 두고, **내 결정만 떼어 놓는** 것 — 이것이 1.1의 선언형 운영을 설정 수준에서 실천하는 모습입니다.
+
+오프라인 이미지에서는 세 가지로 그 조각을 넣습니다. `virt-copy-in -a img 60-lab.conf /etc/ssh/sshd_config.d/`(가장 단순), `virt-customize --copy-in 60-lab.conf:/etc/ssh/sshd_config.d/`(패치 한 덩어리 안에서), `--upload 로컬:정확한/경로`(권한·이름까지 지정). 같은 자리에 `--mkdir`·`--chmod`·`--chown`이 함께 옵니다.
+
+조각 파일에는 규칙이 하나 있습니다. **주석은 설정 줄과 같은 줄에 쓰지 않습니다.** `PasswordAuthentication no  # 랩용`처럼 쓰면 방금 본 `grep -v '#'`가 그 줄을 통째로 걸러 버리고, 그보다 중요하게 — 많은 파서가 인라인 `#`을 주석이 아니라 **값의 일부**로 읽습니다(`sshd_config`의 상당수 지시어가 그렇습니다). 그래서 관례가 "주석은 바로 윗줄에". 사람이 읽기 좋자고 붙인 한마디가 설정을 조용히 망가뜨리지 않게 하는 습관입니다.
+
+`.d/`는 어디에나 있습니다 — `/etc/sudoers.d/`, `/etc/rsyslog.d/`, `/etc/cron.d/`, `/etc/profile.d/`(로그인 셸 환경·프롬프트), `/etc/sysctl.d/`(커널 파라미터), `/etc/systemd/system/⟨서비스⟩.service.d/`(유닛 오버라이드), `/etc/apt/apt.conf.d/`·`sources.list.d/`, `/etc/yum.repos.d/`, `/etc/NetworkManager/conf.d/`, `/etc/modprobe.d/`, `/etc/logrotate.d/`. 읽히는 **순서와 우선순위는 서비스마다 다르므로**(sshd는 먼저 얻은 값이 이깁니다) 조각 이름에 `60-` 같은 번호를 붙여 순서를 드러냅니다 — 그래도 man 확인이 먼저입니다.
+
+같은 사고방식의 또 다른 얼굴이 **심볼릭 링크로 켜고 끄기**입니다. 아파치는 설정을 `sites-available/`에 모아 두고, 활성화할 것만 `sites-enabled/`로 `ln -s` 합니다(`a2ensite`가 그 링크를 만들고 `a2dissite`가 지웁니다). nginx도 같은 관습이고, `systemctl enable` 역시 내부적으로는 유닛을 `*.wants/`에 링크하는 일입니다. 설정을 **지우지 않고 링크만 끊어** 끌 수 있다는 것 — "있는 것"과 "켜진 것"을 분리하는 설계입니다. [실습①](labs/lab-01.md)에서 `grep`으로 `Include`를 직접 발견하고 조각을 얹어 보는 손놀림이 이 절 전체의 씨앗입니다.
+
+더 깊이: [libguestfs 문서](https://libguestfs.org/guestfs.3.html), [virt-customize](https://libguestfs.org/virt-customize.1.html), [qemu-nbd](https://www.qemu.org/docs/master/tools/qemu-nbd.html), [sshd_config(5)](https://man.openbsd.org/sshd_config), [systemd.unit(5) 드롭인](https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html).
 
 ## 1.4 정체성 리셋 — virt-sysprep, machine-id, SSH hostkey, SELinux .autorelabel
 
@@ -143,9 +164,9 @@ sudo ipmitool lan print 1         # BMC의 IP, MAC 주소 (관리망 신원)
 - **IPMI MAC:** 관리 포트(BMC)의 MAC. DHCP 예약이나 관리망 ACL의 키가 됩니다. 본체 NIC MAC과 다른 값입니다.
 - **자산 스티커:** 기관의 자산 번호. 사람이 보는 층입니다.
 
-이 값들을 *한곳에 모은 기록*(인벤토리 표)이 없으면 장애 때 "이 시리얼이 몇 번 랙의 어느 장비지?"를 몸으로 찾아야 합니다. 그리고 그 기록을 **서버 안에도** 넣어 두면, 접속한 순간에도 내가 어디 있는지 알 수 있습니다. [실습①](labs/lab-01.md)에서 `/etc/tag1`(모델)과 `/etc/tag2`(자산 ID)를 이미지에 심고, ohmyzsh 프롬프트가 `[TAG1 … | TAG2 …]` 형태로 보여주는 것이 바로 그 연결입니다. 이미지 쪽 신원(1.4)과 하드웨어 쪽 신원이 프롬프트 한 줄에서 만납니다.
+이 값들을 *한곳에 모은 기록*(인벤토리 표)이 없으면 장애 때 "이 시리얼이 몇 번 랙의 어느 장비지?"를 몸으로 찾아야 합니다. 그리고 그 기록을 **서버 안에도** 넣어 두면, 접속한 순간에도 내가 어디 있는지 알 수 있습니다. KREONET `ohmyzsh` 프롬프트가 `/etc/tag1`(모델)·`/etc/tag2`(자산 ID)를 읽어 `[TAG1 … | TAG2 …]` 형태로 보여주는 것이 그 연결입니다. 이미지 쪽 신원(1.4)과 하드웨어 쪽 신원이 프롬프트 한 줄에서 만납니다.
 
-주의: 이미지는 *여러 장비에 붓는* 것이므로, 태그를 이미지 안에 구워 넣으면 모든 장비가 같은 태그를 갖게 됩니다. 장비별 값은 **붓고 난 뒤**(또는 첫 부팅 시) 채우거나, 태그는 "골든의 모델 계열"까지만 넣는 식으로 역할을 나눠야 합니다.
+그런데 이 태그를 **골든 이미지 안에 구워 넣으면 안 됩니다.** 이미지는 *여러 장비에 붓는* 것이라 모든 장비가 같은 태그를 갖게 되니까요(1.4에서 정체성을 리셋하는 것과 같은 이유). 그래서 태그는 장비별 값이고, **붓고 난 뒤(또는 첫 부팅 시)** 채웁니다. 채우는 방식도 1.3의 원칙 그대로입니다 — `sshd_config`를 `sed`로 깎지 않았듯, 태그도 `inxi`가 읽어낸 모델·시리얼을 `/etc/profile.d/`에 **조각 파일로 떨어뜨려** 프롬프트가 집어가게 하는 쪽이 깔끔합니다(원본을 건드리지 않는 드롭인).
 
 더 깊이: [inxi 문서](https://smxi.org/docs/inxi.htm), [ipmitool 매뉴얼](https://linux.die.net/man/1/ipmitool).
 
