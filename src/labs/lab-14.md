@@ -10,7 +10,8 @@
 printf 'DB_PASSWORD=⟨s3cr3t⟩\nAPI_KEY=⟨xxxx⟩\n' > .env
 chmod 600 .env
 # Claude Code 설정: .env 를 Read 거부 목록에
-cat .claude/settings.json      # "deny": ["Read(./.env)"] 사전 세팅됨
+# "deny": ["Read(./.env)"] 사전 세팅됨
+cat .claude/settings.json
 # 이제 AI에게: "compose로 앱 배포해줘. .env 는 열어보지 말고 그대로 쓰면 돼."
 ```
 
@@ -20,8 +21,10 @@ cat .claude/settings.json      # "deny": ["Read(./.env)"] 사전 세팅됨
 ```bash
 # 이 VM은 ⑥에서 이미 아웃바운드 기본 차단 + squid(apt/ghcr만).
 # AI가 임의 사이트로 데이터를 빼내려 해도:
-docker exec app curl -I https://⟨evil.example⟩     # ❌ 타임아웃 (egress 차단)
-docker exec app curl -I https://ghcr.io            # ✅ (allowlist)
+# ❌ 타임아웃 (egress 차단)
+docker exec app curl -I https://⟨evil.example⟩
+# ✅ (allowlist)
+docker exec app curl -I https://ghcr.io
 ```
 
 👀 **보이는 것:** 허용된 레지스트리/저장소만 나가고 나머지는 막힘. AI든 앱이든 **구멍이 생겨도 데이터가 못 샌다**.

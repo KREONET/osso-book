@@ -75,11 +75,15 @@ launchpad.net/~<id>/+sshkeys
 ### 서버에서는 한 줄
 
 ```bash
-curl -s https://github.com/<id>.keys      # 먼저 눈으로 확인
-ssh-import-id gh:<id>                     # GitHub 계정에서
-ssh-import-id lp:<id>                     # Launchpad 계정에서
+# 먼저 눈으로 확인
+curl -s https://github.com/<id>.keys
+# GitHub 계정에서
+ssh-import-id gh:<id>
+# Launchpad 계정에서
+ssh-import-id lp:<id>
 
-cat ~/.ssh/authorized_keys                # 끝에 '# ssh-import-id gh:<id>' 표식과 함께 추가됨
+# 끝에 '# ssh-import-id gh:<id>' 표식과 함께 추가됨
+cat ~/.ssh/authorized_keys
 ```
 
 `ssh-import-id`는 위 URL에서 키를 받아 **`~/.ssh/authorized_keys`에 출처 표식과 함께 추가**하는 도구입니다. 표식 덕분에 "이 줄이 어디서 왔는지"를 나중에 추적할 수 있습니다.
@@ -158,13 +162,16 @@ Match User jump
 ### 확인 커맨드: 끊기 전에 검증
 
 ```bash
-sudo sshd -t                      # 문법 검사 (아무 출력 없으면 정상)
+# 문법 검사 (아무 출력 없으면 정상)
+sudo sshd -t
 sudo sshd -T | grep -Ei 'passwordauthentication|permitrootlogin'
                                   # '실제로 적용되는 최종 값' 확인 — 파일이 아니라 결과를 본다
-sudo systemctl reload ssh         # (RHEL 계열은 sshd)
+# (RHEL 계열은 sshd)
+sudo systemctl reload ssh
 
 # 다른 터미널에서 새 접속이 되는지 확인한 뒤에만 기존 세션을 닫는다
-ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no host   # → Permission denied 여야 함
+# → Permission denied 여야 함
+ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no host
 ```
 
 > **원칙:** 원격에서 sshd를 고칠 때는 **기존 세션을 끊지 말고** 새 세션으로 먼저 검증합니다. 스스로를 잠그는 가장 흔한 사고입니다.
@@ -226,9 +233,12 @@ authentik의 outpost는 oauth2-proxy가 하던 "문지기" 일을 IdP 쪽 컴포
 ### 확인 커맨드
 
 ```bash
-curl -I https://app.example.org/            # 보호 안 된 경로 → 200
-curl -I https://app.example.org/private     # 보호된 경로 → 302 (IdP 로그인으로 리다이렉트)
-curl -s https://idp.example.org/.well-known/openid-configuration | head   # IdP가 공개한 OIDC 메타데이터
+# 보호 안 된 경로 → 200
+curl -I https://app.example.org/
+# 보호된 경로 → 302 (IdP 로그인으로 리다이렉트)
+curl -I https://app.example.org/private
+# IdP가 공개한 OIDC 메타데이터
+curl -s https://idp.example.org/.well-known/openid-configuration | head
 ```
 
 `.well-known/openid-configuration`은 IdP가 "내 인증 주소·서명 키 위치는 여기"라고 **공개하는 명세서**입니다. 토큰 서명 검증에 쓰는 공개키(JWKS)도 여기서 이어지며, 신뢰의 뿌리가 TLS라는 점에서 역시 [Part 5](05-trust.md)와 연결됩니다.
@@ -264,10 +274,14 @@ OIDC 흐름(authorization code, 토큰 종류) 자체는 교과서 영역이므�
 ### 확인 커맨드 (단말 입장에서 보이는 것)
 
 ```bash
-ip -br link                      # 내 인터페이스·MAC — 허가 목록에 등록된 값인가
-ip -br addr                      # 받은 주소 — 격리 VLAN 대역으로 떨어졌는가
-systemctl status wpa_supplicant  # 802.1X 지원자(supplicant) 동작 여부 (Linux 단말)
-wpa_cli status                   # EAP 인증 상태: 'Authenticated' 인지
+# 내 인터페이스·MAC — 허가 목록에 등록된 값인가
+ip -br link
+# 받은 주소 — 격리 VLAN 대역으로 떨어졌는가
+ip -br addr
+# 802.1X 지원자(supplicant) 동작 여부 (Linux 단말)
+systemctl status wpa_supplicant
+# EAP 인증 상태: 'Authenticated' 인지
+wpa_cli status
 ```
 
 "연결은 되는데 내부망이 안 열린다"면 인증은 됐으나 **포스처 미달로 격리 대역**에 있을 가능성을 먼저 의심합니다. 호스트 보안 프로그램 설치 여부 점검은 이 지점의 첫 체크리스트입니다.

@@ -8,13 +8,18 @@
 ```bash
 # 1) 나가는 걸 다 막는다
 sudo ufw default deny outgoing
-sudo ufw allow out to ⟨10.10.0.9⟩ port 3128    # squid만 예외
-sudo ufw allow out 53                           # DNS
+# squid만 예외
+sudo ufw allow out to ⟨10.10.0.9⟩ port 3128
+# DNS
+sudo ufw allow out 53
 # 2) apt/docker가 프록시를 바라보게
 echo 'Acquire::http::Proxy "http://⟨10.10.0.9⟩:3128";' | sudo tee /etc/apt/apt.conf.d/01proxy
-sudo apt update                                  # ✅ 된다 (allowlist)
-docker pull ghcr.io/⟨org/img⟩                    # ✅ 된다
-curl -I https://example.com                      # ❌ 막힌다
+# ✅ 된다 (allowlist)
+sudo apt update
+# ✅ 된다
+docker pull ghcr.io/⟨org/img⟩
+# ❌ 막힌다
+curl -I https://example.com
 ```
 
 👀 **보이는 것:** apt/docker pull은 성공, 임의 사이트 curl은 타임아웃/거부.

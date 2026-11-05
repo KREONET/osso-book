@@ -25,9 +25,12 @@ WireGuard: System>Firmware>Plugins>os-wireguard 설치 →
 ⌨️ **(3) lubuntu에서 프로파일 받아 접속** (PVE noVNC 안)
 ```bash
 # 방화벽 WAN 주소로 웹 접속해 프로파일 다운로드 후
-sudo openvpn --config ⟨client.ovpn⟩          # 또는 WireGuard: wg-quick up ⟨wg0⟩
-ping ⟨10.10.1.5⟩          # 격리 LAN VM — VPN 전엔 안 되던 게 이제 됨
-ssh ⟨user@10.10.1.5⟩      # 내부로 진입
+# 또는 WireGuard: wg-quick up ⟨wg0⟩
+sudo openvpn --config ⟨client.ovpn⟩
+# 격리 LAN VM — VPN 전엔 안 되던 게 이제 됨
+ping ⟨10.10.1.5⟩
+# 내부로 진입
+ssh ⟨user@10.10.1.5⟩
 ```
 
 👀 **보이는 것:** VPN **전**엔 격리 VM에 `ping`/`ssh` 안 됨 → VPN **후** 바로 닿음. 방화벽 대시보드에 터널 핸드셰이크 표시.

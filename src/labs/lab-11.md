@@ -41,9 +41,11 @@ openssl genrsa -out cli.key 2048
 openssl req -new -key cli.key -subj "/CN=⟨alice⟩" -out cli.csr
 openssl x509 -req -in cli.csr -CA ca.crt -CAkey ca.key -days 365 -out cli.crt
 # caddy에 client_auth(require_and_verify) 설정 후
-curl --cacert ca.crt https://⟨srv.lab.local⟩           # ❌ 403 (클라 인증서 없음)
+# ❌ 403 (클라 인증서 없음)
+curl --cacert ca.crt https://⟨srv.lab.local⟩
+# ✅ 통과
 curl --cacert ca.crt --cert cli.crt --key cli.key \
-     https://⟨srv.lab.local⟩                           # ✅ 통과
+     https://⟨srv.lab.local⟩
 ```
 
 👀 **보이는 것:** 인증서 없는 curl은 거부(TLS handshake 실패/403), 클라 인증서 붙이면 통과.

@@ -5,15 +5,20 @@
 # 1) 키 생성 — 요즘은 ed25519 (짧고·빠르고·안전). 레거시 호환 필요하면 rsa 4096
 ssh-keygen -t ed25519 -C "⟨me@kreonet⟩"
 #   (RSA가 필요하면)  ssh-keygen -t rsa -b 4096 -C "..."
-ssh-keygen -lf ~/.ssh/id_ed25519.pub        # 지문: 256 SHA256:AbCd…  (ED25519)
+# 지문: 256 SHA256:AbCd…  (ED25519)
+ssh-keygen -lf ~/.ssh/id_ed25519.pub
 
 # 2) 공개키를 '공개 URL'로 배포 — 한 번 올려두면 어디서나 당겨 쓴다
-curl https://github.com/⟨msjang⟩.keys          # GitHub가 내 공개키를 서빙
-curl https://launchpad.net/~⟨msjang⟩/+sshkeys  # Launchpad도
+# GitHub가 내 공개키를 서빙
+curl https://github.com/⟨msjang⟩.keys
+# Launchpad도
+curl https://launchpad.net/~⟨msjang⟩/+sshkeys
 
 # 3) 서버(bastion)에서 그 키들을 authorized_keys로 당기기 (네트워크 필요)
-ssh-import-id gh:⟨msjang⟩                      # github.com/.keys 에서
-ssh-import-id lp:⟨msjang⟩                      # launchpad 에서
+# github.com/.keys 에서
+ssh-import-id gh:⟨msjang⟩
+# launchpad 에서
+ssh-import-id lp:⟨msjang⟩
 ```
 
 👀 **보이는 것:** 공개키가 URL로 공개돼 있고, `ssh-import-id` 한 줄이면 서버에 등록됨. 이제 비번 없이 **키로** 로그인.
@@ -50,10 +55,12 @@ Host bastion
   HostName ⟨bastion.wan⟩
   User jump
 Host lanvm
-  HostName ⟨10.10.1.5⟩        # vmbr1 내부 주소
+  # vmbr1 내부 주소
+  HostName ⟨10.10.1.5⟩
   ProxyJump bastion
 EOF
-ssh lanvm hostname             # bastion을 자동 경유해 격리 LAN VM 진입
+# bastion을 자동 경유해 격리 LAN VM 진입
+ssh lanvm hostname
 ```
 
 👀 **보이는 것:** 격리 VM에 직접 `ssh`는 실패(경로 없음) → `ssh lanvm`은 bastion을 거쳐 성공.

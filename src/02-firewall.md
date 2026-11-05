@@ -23,9 +23,12 @@
 **확인 커맨드**
 
 ```bash
-sudo ufw status verbose                  # ufw: 규칙 목록
-sudo firewall-cmd --get-active-zones     # firewalld: 어느 NIC/대역이 어느 zone인가
-sudo nft list ruleset | less             # 둘 다의 실체는 결국 이것
+# ufw: 규칙 목록
+sudo ufw status verbose
+# firewalld: 어느 NIC/대역이 어느 zone인가
+sudo firewall-cmd --get-active-zones
+# 둘 다의 실체는 결국 이것
+sudo nft list ruleset | less
 ```
 
 **바깥 링크:** [ufw (Ubuntu 문서)](https://documentation.ubuntu.com/server/how-to/security/firewalls/) · [firewalld 공식 문서](https://firewalld.org/documentation/) · [nftables wiki](https://wiki.nftables.org/)
@@ -83,12 +86,16 @@ sudo nft list ruleset | less             # 둘 다의 실체는 결국 이것
 ### 확인 커맨드
 
 ```bash
-sudo nft list ruleset > step1.nft                    # 단계마다 저장해서
+# 단계마다 저장해서
+sudo nft list ruleset > step1.nft
+# 체인·점프 구조만 비교
 diff <(grep -E 'chain|jump|goto' step1.nft) \
-     <(grep -E 'chain|jump|goto' step2.nft)          # 체인·점프 구조만 비교
-sudo nft list chain ip filter FORWARD                # 점프 순서
+     <(grep -E 'chain|jump|goto' step2.nft)
+# 점프 순서
+sudo nft list chain ip filter FORWARD
 sudo nft list chain ip filter DOCKER-USER
-sudo iptables-nft -L FORWARD -v -n                   # 카운터가 읽기 쉽다
+# 카운터가 읽기 쉽다
+sudo iptables-nft -L FORWARD -v -n
 # 다른 호스트에서 curl 한 번 → 어느 체인의 카운터가 올랐는지 본다
 sudo iptables-nft -L DOCKER-USER -v -n
 sudo journalctl -k | grep "UFW DOCKER BLOCK"
@@ -111,9 +118,12 @@ sudo journalctl -k | grep "UFW DOCKER BLOCK"
 도구는 공개 저장소 [chaifeng/ufw-docker](https://github.com/chaifeng/ufw-docker)입니다. [실습③](labs/lab-03.md)에서는 이렇게 씁니다.
 
 ```bash
-sudo ufw-docker install                       # after.rules에 블록 추가 후 ufw reload
-sudo ufw-docker allow web 80/tcp              # 컨테이너 web의 80만 허용
-sudo ufw route allow proto tcp from 203.0.113.0/24 to any port 80   # 대역 한정
+# after.rules에 블록 추가 후 ufw reload
+sudo ufw-docker install
+# 컨테이너 web의 80만 허용
+sudo ufw-docker allow web 80/tcp
+# 대역 한정
+sudo ufw route allow proto tcp from 203.0.113.0/24 to any port 80
 sudo ufw-docker list web
 ```
 
@@ -127,9 +137,11 @@ sudo ufw-docker list web
 ### 확인 커맨드
 
 ```bash
-sudo iptables-nft -L DOCKER-USER -v -n          # 점프와 카운터
+# 점프와 카운터
+sudo iptables-nft -L DOCKER-USER -v -n
 sudo nft list chain ip filter DOCKER-USER
-sudo journalctl -k | grep "UFW DOCKER BLOCK"    # 막힌 시도
+# 막힌 시도
+sudo journalctl -k | grep "UFW DOCKER BLOCK"
 sudo grep -n "BEGIN UFW AND DOCKER" -A25 /etc/ufw/after.rules
 ```
 
@@ -229,13 +241,17 @@ FORWARD에 도착한 패킷은 이미 `컨테이너IP:80`이라 policy는 8080�
 ### 확인 커맨드
 
 ```bash
-firewall-cmd --get-active-zones               # 브리지가 docker zone에 있는지
+# 브리지가 docker zone에 있는지
+firewall-cmd --get-active-zones
 firewall-cmd --info-policy=docker-forwarding
 firewall-cmd --list-all-policies
-sudo nft list ruleset | less                  # firewalld와 Docker 테이블이 함께 보임
-firewall-cmd --set-log-denied=all             # 막힌 패킷 추적(끝나면 off)
+# firewalld와 Docker 테이블이 함께 보임
+sudo nft list ruleset | less
+# 막힌 패킷 추적(끝나면 off)
+firewall-cmd --set-log-denied=all
 journalctl -kf
-docker run --rm alpine wget -qO- https://deb.debian.org >/dev/null && echo OK   # 빌드 경로 점검
+# 빌드 경로 점검
+docker run --rm alpine wget -qO- https://deb.debian.org >/dev/null && echo OK
 ```
 
 두 테이블이 맞물리는 구조라, 허용 대역과 그 외 대역 **두 곳에서 실제로 접속해 보는 것**이 최종 검증입니다.
@@ -264,7 +280,8 @@ docker run --rm alpine wget -qO- https://deb.debian.org >/dev/null && echo OK   
 ```bash
 sudo republock status
 sudo nft list set inet republock blocklist | head
-sudo nft list ruleset | grep -n -B2 -A4 republock    # 어느 훅·priority에 걸렸나
+# 어느 훅·priority에 걸렸나
+sudo nft list ruleset | grep -n -B2 -A4 republock
 sudo journalctl -k | grep -i drop | tail
 ```
 
@@ -290,11 +307,15 @@ sudo journalctl -k | grep -i drop | tail
 
 ```bash
 sudo ufw default deny outgoing
-sudo ufw allow out to 192.0.2.9 port 3128    # squid만 예외
-sudo ufw allow out 53                         # DNS
+# squid만 예외
+sudo ufw allow out to 192.0.2.9 port 3128
+# DNS
+sudo ufw allow out 53
 echo 'Acquire::http::Proxy "http://192.0.2.9:3128";' | sudo tee /etc/apt/apt.conf.d/01proxy
-sudo apt update                                # 된다 (allowlist)
-curl -I https://example.com                    # 막힌다
+# 된다 (allowlist)
+sudo apt update
+# 막힌다
+curl -I https://example.com
 ```
 
 **주의.**
@@ -306,9 +327,12 @@ curl -I https://example.com                    # 막힌다
 **확인 커맨드**
 
 ```bash
-sudo ufw status verbose                       # Default: deny (outgoing)
-sudo tail -f /var/log/squid/access.log        # TCP_DENIED / TCP_TUNNEL 로 허용·거부 관찰
-sudo journalctl -k | grep "UFW BLOCK"         # 직접 나가려던 시도
+# Default: deny (outgoing)
+sudo ufw status verbose
+# TCP_DENIED / TCP_TUNNEL 로 허용·거부 관찰
+sudo tail -f /var/log/squid/access.log
+# 직접 나가려던 시도
+sudo journalctl -k | grep "UFW BLOCK"
 ```
 
 **바깥 링크:** [Squid — Access Controls](https://wiki.squid-cache.org/SquidFaq/SquidAcl) · [Ubuntu — ufw](https://documentation.ubuntu.com/server/how-to/security/firewalls/) · [Docker 데몬 프록시 설정](https://docs.docker.com/engine/daemon/proxy/)
@@ -334,18 +358,24 @@ sudo journalctl -k | grep "UFW BLOCK"         # 직접 나가려던 시도
 
 ```yaml
 networks:
-  edge: {}                  # 외부로 나가는 네트워크
-  web:  { internal: true }  # caddy ↔ app
-  data: { internal: true }  # app ↔ db
+  # 외부로 나가는 네트워크
+  edge: {}
+  # caddy ↔ app
+  web:  { internal: true }
+  # app ↔ db
+  data: { internal: true }
 services:
   caddy: { networks: [edge, web] }
-  app:   { networks: [web, data] }     # edge에 없으니 바깥이 없다
+  # edge에 없으니 바깥이 없다
+  app:   { networks: [web, data] }
   db:    { networks: [data] }
 ```
 
 ```bash
-docker compose exec app ping -c3 8.8.8.8     # 가두기 전 된다, 가둔 뒤 실패
-docker network inspect <project>_web --format '{{.Internal}}'   # true
+# 가두기 전 된다, 가둔 뒤 실패
+docker compose exec app ping -c3 8.8.8.8
+# true
+docker network inspect <project>_web --format '{{.Internal}}'
 ```
 
 > 이 고도가 위 2.2의 교훈과 짝입니다. Docker는 *들어오는 쪽*은 publish로 쉽게 열고, *나가는 쪽*은 기본으로 열어 둡니다. 둘 다 "기본 허용"이라는 점이 함정이고, 닫는 방법이 호스트 규칙이 아니라 **구성(topology)** 이라는 점이 해법입니다. 상세는 [Part 4](04-container.md).

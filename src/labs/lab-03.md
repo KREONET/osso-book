@@ -9,11 +9,13 @@
 sudo ufw enable
 sudo ufw deny 80/tcp
 docker run -d -p 80:80 --name web nginx
-curl -I http://localhost          # ← 어? 200이 온다 (막았는데!)
+# 어? 200이 온다 (막았는데!)
+curl -I http://localhost
 # 해결
 sudo ufw-docker install
 sudo ufw route delete allow proto tcp from any to any port 80 2>/dev/null
-curl -I http://localhost          # ← 이제 막힌다
+# 이제 막힌다
+curl -I http://localhost
 ```
 
 👀 **보이는 것:** deny 후에도 첫 curl은 `HTTP/1.1 200 OK`. ufw-docker 적용 후 연결 거부/타임아웃.

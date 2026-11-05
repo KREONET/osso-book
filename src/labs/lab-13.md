@@ -7,7 +7,8 @@
 ⌨️ **해보기**
 ```bash
 # AI에게 줄 ssh 키는 읽기 위주 계정. config는 ⑧에서 만든 ProxyJump 그대로.
-claude      # Claude Code 실행 후, 예:
+# Claude Code 실행 후, 예:
+claude
 #  "ssh로 isolated1~3 돌면서 OS버전·열린포트·docker ps·디스크사용량 표로 정리해줘.
 #   변경은 하지 말고 조사만."
 ```

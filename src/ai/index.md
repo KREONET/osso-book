@@ -9,7 +9,8 @@
 ```bash
 git clone https://github.com/KREONET/osso-book
 cd osso-book
-claude        # 또는 쓰는 AI 코딩 도구 아무거나
+# 또는 쓰는 AI 코딩 도구 아무거나
+claude
 ```
 
 저장소 맨 위의 `AGENTS.md`(Claude Code는 `CLAUDE.md`)에 이 책의 구조와 규칙이 적혀 있어서, AI가 알아서 읽고 시작합니다. 만든 결과물은 `my/` 폴더에 쌓이며 git에는 올라가지 않습니다.

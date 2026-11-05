@@ -179,8 +179,10 @@ certutil -verifystore Root
 
 ```bash
 # 리눅스: 심은 뒤 시스템 신뢰로 검증
-openssl verify srv.crt          # -CAfile 없이도 통과해야 함
-curl https://srv.lab.local/     # --cacert 없이 통과해야 함
+# -CAfile 없이도 통과해야 함
+openssl verify srv.crt
+# --cacert 없이 통과해야 함
+curl https://srv.lab.local/
 ```
 
 - 브라우저 자물쇠 → 인증서 → 발급자가 "MyLab Root CA"인지 확인합니다.

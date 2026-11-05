@@ -25,7 +25,8 @@
 ```bash
 # 대상 서버: 전용 계정, 비밀번호 로그인 없음, sudo 없음
 sudo useradd -m -s /bin/bash ai-ro
-sudo usermod -aG systemd-journal,adm ai-ro     # 로그 읽기만
+# 로그 읽기만
+sudo usermod -aG systemd-journal,adm ai-ro
 sudo passwd -l ai-ro
 ```
 
@@ -70,9 +71,12 @@ from="10.0.0.5",no-agent-forwarding,no-port-forwarding,no-X11-forwarding ssh-ed2
 VM을 복제하고, IP가 바뀌고, 호스트명이 같은 서버가 둘이 되는 일은 흔합니다. 인벤토리의 키가 IP나 호스트명이면 대장이 금방 어긋납니다. 그래서 **쉽게 바뀌지 않는 식별자**를 함께 기록합니다.
 
 ```bash
-cat /etc/machine-id                         # systemd가 첫 부팅 때 생성하는 128bit ID
-sudo cat /sys/class/dmi/id/product_uuid     # 하이퍼바이저/바이오스가 주는 UUID (root 필요)
-ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub   # SSH 호스트키 지문
+# systemd가 첫 부팅 때 생성하는 128bit ID
+cat /etc/machine-id
+# 하이퍼바이저/바이오스가 주는 UUID (root 필요)
+sudo cat /sys/class/dmi/id/product_uuid
+# SSH 호스트키 지문
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
 ```
 
 각각의 함정이 있습니다.
@@ -183,9 +187,11 @@ Claude Code를 쓴다면 프로젝트의 `.claude/settings.json`에서 읽기를
 
 ```bash
 # 허용 목록에 없는 곳 → 막힘
-docker exec app curl -I --max-time 5 https://evil.example   # 타임아웃
+# 타임아웃
+docker exec app curl -I --max-time 5 https://evil.example
 # 허용 목록에 있는 곳 → 통과
-docker exec app curl -I https://ghcr.io                     # 200/301
+# 200/301
+docker exec app curl -I https://ghcr.io
 ```
 
 ### 설계 원칙

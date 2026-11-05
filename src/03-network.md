@@ -27,7 +27,8 @@
 cat /etc/network/interfaces | sed -n '/vmbr1/,/^$/p'
 #   bridge-ports none        <- 이 줄이 '섬'의 정의
 
-bridge link show              # 어떤 포트가 어느 브리지에 붙었나
+# 어떤 포트가 어느 브리지에 붙었나
+bridge link show
 ip -br link show type bridge
 ```
 
@@ -62,7 +63,8 @@ ens19 (vmbr1)  10.10.1.2/24      (gw 없음)         <- 10.10.1.0/24는 connecte
 ```bash
 # NetworkManager (Rocky/RHEL 계열)
 nmcli con mod ens19 ipv4.method manual ipv4.addresses 10.10.1.2/24
-nmcli con mod ens19 ipv4.never-default yes          # 이 NIC는 default를 갖지 않는다
+# 이 NIC는 default를 갖지 않는다
+nmcli con mod ens19 ipv4.never-default yes
 nmcli con mod ens19 +ipv4.routes "10.20.0.0/16 10.10.1.254"
 nmcli con up ens19
 ```
@@ -94,9 +96,12 @@ network:
 **확인.**
 
 ```bash
-ip route                         # default 줄이 정확히 한 개인가
-ip route get 10.10.1.5           # "이 목적지는 어느 NIC·게이트웨이로?" 커널의 실제 답
-ip route get 198.51.100.7        # 바깥 주소는 default 쪽으로 나가는가
+# default 줄이 정확히 한 개인가
+ip route
+# "이 목적지는 어느 NIC·게이트웨이로?" 커널의 실제 답
+ip route get 10.10.1.5
+# 바깥 주소는 default 쪽으로 나가는가
+ip route get 198.51.100.7
 nmcli -f ipv4.routes,ipv4.never-default con show ens19
 ```
 
@@ -130,8 +135,10 @@ nmcli -f ipv4.routes,ipv4.never-default con show ens19
 
 ```bash
 # 격리 LAN VM에서 (방화벽이 게이트웨이)
-ip route                          # default via 10.10.1.1  <- 방화벽 LAN 주소
-traceroute -n 198.51.100.7        # 첫 홉이 방화벽인가
+# default via 10.10.1.1  <- 방화벽 LAN 주소
+ip route
+# 첫 홉이 방화벽인가
+traceroute -n 198.51.100.7
 curl -m 5 -sI https://example.com # 막혀 있으면 타임아웃 (REJECT면 즉시 실패)
 ```
 
@@ -174,8 +181,10 @@ Address    = 10.99.0.2/32
 [Peer]
 PublicKey  = ⟨server-public-key⟩
 Endpoint   = 203.0.113.10:⟨커스텀포트⟩
-AllowedIPs = 10.10.1.0/24        # 섬 대역만 터널로 (split tunnel)
-PersistentKeepalive = 25         # NAT 뒤라면
+# 섬 대역만 터널로 (split tunnel)
+AllowedIPs = 10.10.1.0/24
+# NAT 뒤라면
+PersistentKeepalive = 25
 ```
 
 `AllowedIPs = 0.0.0.0/0`으로 두면 **모든 트래픽이 터널로** 갑니다(full tunnel). 섬에 들어가려는 목적이면 split tunnel(섬 대역만)이 낫습니다. 이것도 3.2의 "default route는 하나"와 같은 이야기입니다. `wg-quick`이 full tunnel일 때 default route를 바꿔치기하기 때문입니다.
@@ -183,11 +192,14 @@ PersistentKeepalive = 25         # NAT 뒤라면
 **확인.**
 
 ```bash
-sudo wg show                       # latest handshake: N seconds ago  <- 살아 있다는 증거
-ip route get 10.10.1.5             # dev wg0 로 나가는가
+# latest handshake: N seconds ago  <- 살아 있다는 증거
+sudo wg show
+# dev wg0 로 나가는가
+ip route get 10.10.1.5
 sudo wg-quick up wg0 && ping -c3 10.10.1.5
 
-sudo openvpn --config client.ovpn  # "Initialization Sequence Completed"
+# "Initialization Sequence Completed"
+sudo openvpn --config client.ovpn
 ip -br addr show tun0
 ```
 
@@ -229,12 +241,16 @@ Host lanvm
 
 ```bash
 # egress: 격리 VM에서
-curl -m 5 -sI https://example.com    # 평소: 타임아웃. 토글 ON: 통과. OFF: 다시 막힘.
+# 평소: 타임아웃. 토글 ON: 통과. OFF: 다시 막힘.
+curl -m 5 -sI https://example.com
 
 # ingress: 내 PC에서
-ssh user@10.10.1.5                   # bastion 없이 직접 시도하면 경로 없음으로 실패해야 한다
-ssh -v lanvm hostname                # 디버그 출력에 bastion 경유가 보인다
-ssh -J jump@203.0.113.10 user@10.10.1.5 hostname   # config 없이 한 줄로
+# bastion 없이 직접 시도하면 경로 없음으로 실패해야 한다
+ssh user@10.10.1.5
+# 디버그 출력에 bastion 경유가 보인다
+ssh -v lanvm hostname
+# config 없이 한 줄로
+ssh -J jump@203.0.113.10 user@10.10.1.5 hostname
 ```
 
 bastion 자체가 단일 장애·단일 표적이 된다는 점은 비용입니다. 그래서 **키만 허용, 비밀번호 로그인 끔, 접속 로그 보존**이 짝으로 따라옵니다. 키·접근 정책은 [Part 6](06-access.md)에서 이어집니다.
@@ -259,8 +275,10 @@ bastion 자체가 단일 장애·단일 표적이 된다는 점은 비용입니�
 ```bash
 # -M do : Don't Fragment 비트를 켜고 보낸다. 크면 쪼개지 않고 오류로 돌려받는다.
 # -s N  : ICMP 페이로드 크기. 전체 패킷 = N + 28 (IP 20 + ICMP 8)
-ping -c3 -M do -s 8972 ⟨host⟩     # 8972 + 28 = 9000 : 점보 경로가 되는가
-ping -c3 -M do -s 1472 ⟨host⟩     # 1472 + 28 = 1500 : 표준 경로가 되는가
+# 8972 + 28 = 9000 : 점보 경로가 되는가
+ping -c3 -M do -s 8972 ⟨host⟩
+# 1472 + 28 = 1500 : 표준 경로가 되는가
+ping -c3 -M do -s 1472 ⟨host⟩
 ```
 
 해석은 간단합니다.

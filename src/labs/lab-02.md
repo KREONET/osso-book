@@ -6,10 +6,12 @@
 
 ⌨️ **ⓐ Ventoy USB 하나에 부팅도구 + 이미지 싣기** (작업 VM)
 ```bash
-sudo ventoy -i /dev/⟨sdb⟩          # usb-ventoy.qcow2 에 Ventoy 설치
+# usb-ventoy.qcow2 에 Ventoy 설치
+sudo ventoy -i /dev/⟨sdb⟩
 #   필요시 -r ⟨4096⟩ 로 뒤에 예비(데이터) 파티션 공간 확보
 sudo mount /dev/⟨sdb1⟩ /mnt
-sudo cp gparted-q.iso clonezilla.iso ⟨image.img⟩ /mnt/ ; sync   # 부팅 ISO들 + 패치 이미지
+# 부팅 ISO들 + 패치 이미지
+sudo cp gparted-q.iso clonezilla.iso ⟨image.img⟩ /mnt/ ; sync
 ```
 
 👀 USB 데이터 파티션에 `gparted-q.iso`와 ①의 패치 이미지가 **같이** 들어감.
@@ -35,16 +37,20 @@ VM > Hardware > 메인 디스크 선택 > Detach → Remove
 ```bash
 # PVE: Hardware > Add > Hard Disk(20G), 그리고 usb-ventoy 디스크 붙임 → USB로 부팅
 #      Ventoy 메뉴 > GParted-q 선택 → 라이브 터미널:
-lsblk                               # 타겟 빈 디스크(⟨sda⟩)·Ventoy(⟨sdb⟩) 확인
+# 타겟 빈 디스크(⟨sda⟩)·Ventoy(⟨sdb⟩) 확인
+lsblk
 sudo mount /dev/⟨sdb1⟩ /mnt
 sudo qemu-img convert -p -f qcow2 -O raw /mnt/⟨image.img⟩ /dev/⟨sda⟩
 # ISO·USB 떼고 → 새 디스크로 부팅
 ```
 그리고 부팅 후 — **되살아났는지 확인**
 ```bash
-htop --version            # ①에서 넣은 패치가 그대로 있다
-cat /etc/machine-id       # sysprep 덕에 새 값(클론과 안 겹침)
-sudo hostnamectl set-hostname ⟨042-u24-web⟩   # 새 장비엔 새 이름 — ⟨IP끝 3자리⟩-⟨OS⟩-⟨용도⟩
+# ①에서 넣은 패치가 그대로 있다
+htop --version
+# sysprep 덕에 새 값(클론과 안 겹침)
+cat /etc/machine-id
+# 새 장비엔 새 이름 — ⟨IP끝 3자리⟩-⟨OS⟩-⟨용도⟩
+sudo hostnamectl set-hostname ⟨042-u24-web⟩
 ```
 
 > 💡 VM이 많아지면 `ubuntu@ubuntu`로는 헷갈린다. **`⟨IP 끝자리 3자리⟩-⟨u24 같은 OS약어⟩-⟨용도⟩`** 처럼 이름에 정보를 넣으면 프롬프트만 보고 "어디냐·apt냐 dnf냐·재부팅해도 되냐"가 보인다. OS 버전·IP는 어차피 `/etc/os-release`·`ip a`로 누구나 보는 정보라 보안 손해는 거의 없고 편의는 크다([Part 1 §1.7](../01-image.md)).
@@ -81,15 +87,19 @@ sudo hostnamectl set-hostname ⟨042-u24-web⟩   # 새 장비엔 새 이름 —
 1. 부팅 중 GRUB 메뉴에서 e
 2. linux 줄 끝에  init=/bin/bash   (Rocky/RHEL은  rd.break )
 3. Ctrl-X 로 부팅
-4. mount -o remount,rw /          # (rd.break면 먼저 chroot /sysroot)
-5. passwd root                    # 새 비번
-6. touch /.autorelabel            # Rocky/RHEL SELinux 재라벨
+# (rd.break면 먼저 chroot /sysroot)
+4. mount -o remount,rw /
+# 새 비번
+5. passwd root
+# Rocky/RHEL SELinux 재라벨
+6. touch /.autorelabel
 7. exec /sbin/init  (또는 재부팅)
 ```
 *방법 B — 콘솔이 막혔거나 부팅이 안 될 때 (라이브 USB chroot):*
 ```
 1. Ventoy 메뉴 > GParted-q(또는 아무 라이브) 부팅
-2. sudo mount /dev/⟨sda2⟩ /mnt   # 루트 파티션
+# 루트 파티션
+2. sudo mount /dev/⟨sda2⟩ /mnt
 3. for d in dev proc sys; do sudo mount --bind /$d /mnt/$d; done
 4. sudo chroot /mnt passwd root
 5. (Rocky면) sudo touch /mnt/.autorelabel

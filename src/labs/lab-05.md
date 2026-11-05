@@ -7,7 +7,8 @@
 ⌨️ **해보기**
 ```bash
 sudo republock enable spammers abuseipdb asndrop
-sudo republock status            # 약 11만 엔트리 로드
+# 약 11만 엔트리 로드
+sudo republock status
 sudo nft list set inet republock blocklist | head
 # 로그에서 차단되는 것 관찰
 sudo journalctl -k | grep -i drop | tail

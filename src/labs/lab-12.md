@@ -6,10 +6,12 @@
 
 ⌨️ **해보기**
 ```bash
-cat compose.yaml            # oauth2-proxy 가 upstream 앞에 선다
+# oauth2-proxy 가 upstream 앞에 선다
+cat compose.yaml
 docker compose up -d
 # 보호 안 된 앱은 그냥 열림. 보호된 경로는 프록시가 가로챔.
-curl -I https://⟨app.lab.local⟩/private     # → 302 로그인 리다이렉트
+# → 302 로그인 리다이렉트
+curl -I https://⟨app.lab.local⟩/private
 ```
 그리고 브라우저로 `https://⟨app.lab.local⟩/private` 접속 → IdP 로그인 화면 → 로그인하면 통과.
 

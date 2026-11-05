@@ -13,7 +13,8 @@ caddy reverse-proxy --from ⟨⟨svc.demo.example⟩⟩ --to localhost:8080
 # B) DNS-01 — 80 안 열고, DNS TXT 레코드로 증명 (내부/와일드카드 가능)
 #   acme-dns에 _acme-challenge.eNN 만 위임받았으므로 존 전체 권한 없이 발급
 export ACME_DNS_API=⟨https://⟨auth.acme-dns.example⟩⟩
-caddy run --config Caddyfile.dns01     # dns 챌린지 프로바이더 설정됨
+# dns 챌린지 프로바이더 설정됨
+caddy run --config Caddyfile.dns01
 ```
 
 👀 **보이는 것:** A는 80포트 요청 로그 후 발급. B는 포트 안 열고도 `certificate obtained` — DNS에 TXT가 잠깐 생겼다 사라짐.

@@ -9,24 +9,53 @@
 wget ⟨https://⟨mirror.example⟩/.../jammy-server-cloudimg-amd64.img⟩ -O ⟨image.img⟩
 ```
 
+📦 **클라우드 이미지 공식 저장소** — 최신은 `current`·`latest` 디렉터리에 있다.
+
+| 배포판 | 저장소 (최신) | 파일 |
+| --- | --- | --- |
+| Ubuntu 26.04 LTS | <https://cloud-images.ubuntu.com/resolute/current/> | `resolute-server-cloudimg-amd64.img` |
+| Ubuntu 24.04 LTS | <https://cloud-images.ubuntu.com/noble/current/> | `noble-server-cloudimg-amd64.img` |
+| Debian 13 | <https://cloud.debian.org/images/cloud/trixie/latest/> | `debian-13-genericcloud-amd64.qcow2` |
+| Rocky 10 | <https://dl.rockylinux.org/pub/rocky/10/images/x86_64/> | `Rocky-10-GenericCloud-Base.latest.x86_64.qcow2` |
+| Rocky 9 | <https://dl.rockylinux.org/pub/rocky/9/images/x86_64/> | `Rocky-9-GenericCloud-Base.latest.x86_64.qcow2` |
+
+> 우분투의 `current/`는 보안 업데이트가 반영된 **최신 빌드**다. 버전을 고정하려면 `releases/26.04/`처럼 릴리스 디렉터리를 쓴다. 받은 뒤엔 같은 디렉터리의 체크섬 파일(`SHA256SUMS` 등)로 검증한다. 우분투 `.img`도 확장자만 그렇고 실제 형식은 qcow2다(`qemu-img info`로 확인). 데비안의 `genericcloud`는 가상머신용이라 물리 하드웨어 드라이버가 빠져 있다. 실물 서버에 부을(②의 V2P) 이미지면 `generic`을 받는다.
+
 ⌨️ **탐색 — 안 켜고 안을 들여다본다(읽기)**
 ```bash
-virt-inspector -a ⟨image.img⟩ | head -40     # OS·설치앱 목록
-virt-ls  -a ⟨image.img⟩ /etc | head          # 디렉터리 보기 (부팅 없이)
-virt-cat -a ⟨image.img⟩ /etc/os-release       # 파일 내용 뽑기
+# OS·설치앱 목록
+virt-inspector -a ⟨image.img⟩ | head -40
+# 디렉터리 보기 (부팅 없이)
+virt-ls  -a ⟨image.img⟩ /etc | head
+# 파일 내용 뽑기
+virt-cat -a ⟨image.img⟩ /etc/os-release
 # 진짜 파일시스템으로 마운트해서 보기 (qemu-nbd)
 sudo modprobe nbd max_part=8
 sudo qemu-nbd --connect=/dev/nbd0 ⟨image.img⟩
-sudo mount /dev/nbd0p1 /mnt && ls /mnt/etc    # 디스크를 폴더처럼
+# 디스크를 폴더처럼
+sudo mount /dev/nbd0p1 /mnt && ls /mnt/etc
 sudo umount /mnt; sudo qemu-nbd --disconnect /dev/nbd0
 ```
 
 ⌨️ **패치 — 계정·패키지·운영환경·정체성을 심는다(쓰기)**
 ```bash
 # 비번은 명령줄에 직접 쓰지 않는다 → 파일로 (셸 히스토리·ps 노출 방지)
-printf '%s' '⟨labpass⟩' > pass.txt            # 또는 무작위:  openssl rand -base64 18 > pass.txt
+# 방법 1: 직접 정하기
+printf '%s' '⟨labpass⟩' > pass.txt
+# 방법 2: 무작위로 만들기 — 쓰려면 위 printf 대신 아래 두 줄의 # 을 지운다
+# openssl rand -base64 18 > pass.txt
+# cat pass.txt
 chmod 600 pass.txt
+```
 
+`openssl rand` 출력 예 (매번 다르다):
+```text
+ntQOkXgPRDZGo84g9DCMM7C8
+```
+
+> 18바이트 무작위 값을 base64로 바꾸면 24글자가 된다(18이 3의 배수라 끝에 `=`가 붙지 않는다). 무작위 비번이면 아래 `shred`로 파일을 지우기 **전에** 비밀번호 관리자 같은 안전한 곳에 옮겨 둔다. 안 그러면 ②에서 부팅한 뒤 로그인할 방법이 없다.
+
+```bash
 virt-customize -a ⟨image.img⟩ \
   --root-password file:pass.txt \
   --run-command 'useradd -m -s /bin/bash ⟨labuser⟩' \
@@ -35,8 +64,10 @@ virt-customize -a ⟨image.img⟩ \
   --run-command 'systemctl disable snapd.service' \
   --firstboot-command \
     'curl -s https://raw.githubusercontent.com/KREONET/ohmyzsh/main/install.sh | sh -s -'
-shred -u pass.txt                             # 끝나면 비번 파일 폐기(흔적 제거)
-virt-sysprep -a ⟨image.img⟩                   # 정체성 리셋(machine-id·hostkey·로그)
+# 끝나면 비번 파일 폐기(흔적 제거)
+shred -u pass.txt
+# 정체성 리셋(machine-id·hostkey·로그)
+virt-sysprep -a ⟨image.img⟩
 # ⚠️ Rocky/RHEL 계열이면 다음 부팅 때 SELinux 재라벨:
 # virt-customize -a ⟨rocky.qcow2⟩ --touch /.autorelabel
 ```
@@ -49,7 +80,8 @@ virt-sysprep -a ⟨image.img⟩                   # 정체성 리셋(machine-id�
 
 리눅스 설정은 큰 파일 하나가 아니라, 큰 파일이 작은 조각들을 **불러오는(include)** 구조인 경우가 많다. 먼저 **직접 확인**하자.
 ```bash
-grep -v '#' /etc/ssh/sshd_config | uniq       # 주석 걷어내고 '실제 설정만' 본다
+# 주석 걷어내고 '실제 설정만' 본다
+grep -v '#' /etc/ssh/sshd_config | uniq
 ```
 맨 위(또는 아래)에 이런 줄이 보일 것이다.
 ```

@@ -6,7 +6,8 @@
 
 ⌨️ **(1) 가두기 전 — 컨테이너는 기본적으로 바깥이 열려 있다**
 ```bash
-docker compose exec app ping -c3 8.8.8.8     # ← 된다. (기본 bridge는 egress 허용)
+# 된다. (기본 bridge는 egress 허용)
+docker compose exec app ping -c3 8.8.8.8
 ```
 
 👀 100% 통함. 이게 **SADP가 짚는 구멍** — 털린 백엔드가 아무 데나 나간다(C2·데이터 유출).
@@ -17,24 +18,35 @@ services:
   caddy:
     image: caddy
     ports: ["443:443"]
-    networks: [edge, web]        # edge=외부, web=app과 연결
+    # edge=외부, web=app과 연결
+    networks: [edge, web]
   app:
-    build: .                     # ping 포함해 구운 이미지(손놀림④)
-    networks: [web, data]        # caddy(web) · db(data) 에만 붙음
+    # ping 포함해 구운 이미지(손놀림④)
+    build: .
+    # caddy(web) · db(data) 에만 붙음
+    networks: [web, data]
   db:
     image: postgres
-    networks: [data]             # app 하고만
+    # app 하고만
+    networks: [data]
 networks:
-  edge: {}                       # 외부 egress 가능 — caddy 전용
-  web:  { internal: true }       # 인터넷 차단
-  data: { internal: true }       # 인터넷 차단
+  # 외부 egress 가능 — caddy 전용
+  edge: {}
+  # 인터넷 차단
+  web:  { internal: true }
+  # 인터넷 차단
+  data: { internal: true }
 ```
 ```bash
 docker compose up -d
-docker compose exec app   ping -c3 8.8.8.8    # ← 이제 100% loss (나갈 길이 없음)
-docker compose exec app   ping -c2 caddy      # ← OK (web 공유)
-docker compose exec app   ping -c2 db         # ← OK (data 공유)
-docker compose exec caddy ping -c2 8.8.8.8    # ← caddy는 여전히 OK (edge)
+# 이제 100% loss (나갈 길이 없음)
+docker compose exec app   ping -c3 8.8.8.8
+# OK (web 공유)
+docker compose exec app   ping -c2 caddy
+# OK (data 공유)
+docker compose exec app   ping -c2 db
+# caddy는 여전히 OK (edge)
+docker compose exec caddy ping -c2 8.8.8.8
 ```
 
 👀 **보이는 것:** app의 `8.8.8.8`은 죽고 **caddy·db로는 멀쩡**. caddy는 외부도 app도 되고, db는 app하고만. **규칙 한 줄 없이** compose 멤버십만으로 egress를 그렸다.

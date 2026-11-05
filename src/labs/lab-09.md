@@ -7,9 +7,11 @@
 ⌨️ **(1) 띄우기** — 쓸만한 오픈소스 하나 (예: Uptime Kuma·Dozzle·NocoDB·Gitea·Outline 중 택1)
 ```bash
 git clone ⟨https://github.com/kreonet/demo-⟨uptime-kuma⟩⟩ && cd demo-⟨uptime-kuma⟩
-cat compose.yaml            # 뭘 띄우는지 먼저 읽는다
+# 뭘 띄우는지 먼저 읽는다
+cat compose.yaml
 docker compose up -d
-docker compose ps           # 뜬 컨테이너·포트
+# 뜬 컨테이너·포트
+docker compose ps
 ```
 
 👀 `up -d` 몇 줄 만에 서비스가 뜸(이미지는 이미 받아둠). `ps`에 healthy·포트 매핑.
@@ -39,8 +41,10 @@ docker compose ps           # 뜬 컨테이너·포트
 
 ⌨️ **① 안으로 들어가 보기** — 컨테이너는 격리됐지만 문은 있다
 ```bash
-docker exec -it ⟨web⟩ bash        # 쉘 없으면 sh
-  ps aux; cat /etc/os-release      # 프로세스가 사는 '집'을 구경
+# 쉘 없으면 sh
+docker exec -it ⟨web⟩ bash
+  # 프로세스가 사는 '집'을 구경
+  ps aux; cat /etc/os-release
   exit
 ```
 
@@ -51,7 +55,8 @@ docker exec -it ⟨web⟩ bash        # 쉘 없으면 sh
 # DB를 docker로 띄워두고, 그 안의 CLI를 alias 한 줄로 끌어낸다
 alias influx='docker exec -it ⟨librenms_influx⟩ influx -database ⟨libre⟩'
 alias psql='docker exec -it ⟨pg⟩ psql -U ⟨postgres⟩'
-influx            # ← 이제 그냥 이렇게. 로컬에 설치한 것처럼.
+# 이제 그냥 이렇게. 로컬에 설치한 것처럼.
+influx
 # ~/.zshrc(또는 Day1 ① ohmyzsh 운영환경)에 넣어두면 장비마다 따라온다
 ```
 
@@ -59,9 +64,12 @@ influx            # ← 이제 그냥 이렇게. 로컬에 설치한 것처럼.
 
 ⌨️ **③ 설정은 굽지 말고 — 추출→수정→마운트**
 ```bash
-docker run --rm ⟨nginx⟩ cat /etc/nginx/nginx.conf > ./nginx.conf   # 기본값 꺼내기(1회성 run)
-vi ./nginx.conf                                                    # 고치고
-docker run -d -v ./nginx.conf:/etc/nginx/nginx.conf:ro ⟨nginx⟩     # 덮어서 실행
+# 기본값 꺼내기(1회성 run)
+docker run --rm ⟨nginx⟩ cat /etc/nginx/nginx.conf > ./nginx.conf
+# 고치고
+vi ./nginx.conf
+# 덮어서 실행
+docker run -d -v ./nginx.conf:/etc/nginx/nginx.conf:ro ⟨nginx⟩
 #   compose면 volumes: 에 한 줄
 ```
 
@@ -75,11 +83,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-USER 1000:1000                 # 비루트로
+# 비루트로
+USER 1000:1000
 CMD ["python", "app.py"]
 ```
 ```bash
-docker build -t ⟨myapp:1.0⟩ .          # 내 앱을 이미지로 '구움' = 어디서나 같게
+# 내 앱을 이미지로 '구움' = 어디서나 같게
+docker build -t ⟨myapp:1.0⟩ .
 docker run --rm -p 8000:8000 ⟨myapp:1.0⟩
 ```
 

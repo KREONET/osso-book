@@ -29,9 +29,12 @@
 **확인.**
 
 ```bash
-docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'   # 내가 몇 개를 돌리고 있나
-docker stats --no-stream                                          # 그 값어치를 하나
-uname -r; docker exec <ctr> uname -r                              # 같은 커널 = 공유의 증거
+# 내가 몇 개를 돌리고 있나
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+# 그 값어치를 하나
+docker stats --no-stream
+# 같은 커널 = 공유의 증거
+uname -r; docker exec <ctr> uname -r
 ```
 
 **바깥 링크.** [Docker: What is a container](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/) · [Linux namespaces(man7)](https://man7.org/linux/man-pages/man7/namespaces.7.html)
@@ -44,11 +47,14 @@ uname -r; docker exec <ctr> uname -r                              # 같은 커�
 # compose.yaml — 이 한 파일이 "설치 문서"를 대신한다
 services:
   kuma:
-    image: louislam/uptime-kuma:1      # 버전을 고정(재현성)
+    # 버전을 고정(재현성)
+    image: louislam/uptime-kuma:1
     restart: unless-stopped
-    ports: ["127.0.0.1:3001:3001"]     # 바깥에 열지 않고 로컬만
+    # 바깥에 열지 않고 로컬만
+    ports: ["127.0.0.1:3001:3001"]
     volumes:
-      - kuma-data:/app/data            # 지켜야 할 건 이것뿐
+      # 지켜야 할 건 이것뿐
+      - kuma-data:/app/data
 volumes:
   kuma-data: {}
 ```
@@ -63,10 +69,14 @@ volumes:
 
 ```bash
 docker compose up -d && docker compose ps
-docker compose down                 # 컨테이너·네트워크 삭제 (볼륨은 유지)
-docker compose up -d                # 그대로 복구 — 데이터도 살아 있다
-docker compose down -v              # -v 는 볼륨까지 삭제: 되돌릴 수 없음
-docker compose config               # 변수 치환이 끝난 최종 선언을 보기
+# 컨테이너·네트워크 삭제 (볼륨은 유지)
+docker compose down
+# 그대로 복구 — 데이터도 살아 있다
+docker compose up -d
+# -v 는 볼륨까지 삭제: 되돌릴 수 없음
+docker compose down -v
+# 변수 치환이 끝난 최종 선언을 보기
+docker compose config
 ```
 
 > 함정: `latest` 태그와 이름 없는 볼륨은 선언형을 조용히 망친다. 버전은 고정하고, 지킬 데이터는 이름 있는 볼륨이나 명시적 경로로 둔다.
@@ -80,8 +90,10 @@ docker compose config               # 변수 치환이 끝난 최종 선언을 �
 ### (1) `docker exec -it` — 컨테이너 안으로
 
 ```bash
-docker compose exec app sh          # compose 서비스 이름으로
-docker exec -it <ctr> bash          # 컨테이너 이름으로 (쉘이 없으면 sh)
+# compose 서비스 이름으로
+docker compose exec app sh
+# 컨테이너 이름으로 (쉘이 없으면 sh)
+docker exec -it <ctr> bash
 ```
 
 - `exec`는 *이미 도는* 컨테이너의 네임스페이스에 새 프로세스를 끼워 넣는다. `run`은 *새* 컨테이너를 만든다. 혼동하면 "고쳤는데 사라졌다"가 된다.
@@ -93,7 +105,8 @@ docker exec -it <ctr> bash          # 컨테이너 이름으로 (쉘이 없으�
 ```bash
 alias psql='docker compose exec -T db psql -U postgres'
 alias redis-cli='docker exec -it redis redis-cli'
-psql -c 'select now();'             # 로컬에 설치한 것처럼
+# 로컬에 설치한 것처럼
+psql -c 'select now();'
 ```
 
 - 호스트에 DB 클라이언트를 *설치하지 않는다.* 버전도 서버와 같은 이미지에서 온다 — 클라이언트/서버 버전 불일치가 사라진다.
@@ -103,8 +116,10 @@ psql -c 'select now();'             # 로컬에 설치한 것처럼
 ### (3) 설정: 추출 → 수정 → 볼륨 마운트 ("굽지 말고 마운트")
 
 ```bash
-docker run --rm nginx cat /etc/nginx/nginx.conf > ./nginx.conf   # 1) 기본값 추출
-vi ./nginx.conf                                                  # 2) 수정
+# 1) 기본값 추출
+docker run --rm nginx cat /etc/nginx/nginx.conf > ./nginx.conf
+# 2) 수정
+vi ./nginx.conf
 ```
 
 ```yaml
@@ -112,7 +127,8 @@ services:
   web:
     image: nginx:1.27
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro                    # 3) 덮어 마운트
+      # 3) 덮어 마운트
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
 ```
 
 - 이미지는 **불변**, 바뀌는 것은 **밖에서 주입**. 이미지를 업그레이드해도 내 설정은 그대로다.
@@ -137,7 +153,8 @@ CMD ["python", "app.py"]
 **확인.**
 
 ```bash
-docker compose exec app id          # 지금 누구로 도나 (root면 4.5로)
+# 지금 누구로 도나 (root면 4.5로)
+docker compose exec app id
 docker build -t myapp:1.0 . && docker run --rm -p 8000:8000 myapp:1.0
 ```
 
@@ -159,15 +176,18 @@ services:
   caddy:
     image: caddy:2
     ports: ["443:443"]
-    networks: [edge, web]       # 바깥과 app 사이의 문지기
+    # 바깥과 app 사이의 문지기
+    networks: [edge, web]
   app:
     build: .
-    networks: [web, data]       # 붙은 곳 = 말할 수 있는 곳 (edge 없음)
+    # 붙은 곳 = 말할 수 있는 곳 (edge 없음)
+    networks: [web, data]
   db:
     image: postgres:16
     networks: [data]
 networks:
-  edge: {}                      # 기본 bridge: NAT로 외부 나감
+  # 기본 bridge: NAT로 외부 나감
+  edge: {}
   web:  { internal: true }
   data: { internal: true }
 ```
@@ -179,11 +199,16 @@ networks:
 **확인.** 가두기 전/후를 반드시 대조한다.
 
 ```bash
-docker compose exec app ping -c3 8.8.8.8    # internal 적용 후: 100% loss
-docker compose exec app ping -c2 caddy      # OK (web 공유)
-docker compose exec app ping -c2 db         # OK (data 공유)
-docker compose exec caddy ping -c2 8.8.8.8  # OK (edge)
-docker network inspect <project>_web --format '{{.Internal}}'   # true
+# internal 적용 후: 100% loss
+docker compose exec app ping -c3 8.8.8.8
+# OK (web 공유)
+docker compose exec app ping -c2 caddy
+# OK (data 공유)
+docker compose exec app ping -c2 db
+# OK (edge)
+docker compose exec caddy ping -c2 8.8.8.8
+# true
+docker network inspect <project>_web --format '{{.Internal}}'
 ```
 
 > `ping`이 없으면 `getent hosts caddy`, `curl -m3 https://example.com`로 대체한다.
@@ -214,8 +239,10 @@ USER 10001:10001
 - 마운트한 볼륨의 소유권이 UID와 맞아야 쓰기가 된다. "Permission denied"의 대부분이 이것이다.
 
 ```bash
-docker compose exec app id                                  # uid=10001 이어야 함
-docker inspect -f '{{.Config.User}}' myapp:1.0              # 비면 root
+# uid=10001 이어야 함
+docker compose exec app id
+# 비면 root
+docker inspect -f '{{.Config.User}}' myapp:1.0
 ```
 
 ### 멀티스테이지
@@ -227,7 +254,8 @@ docker inspect -f '{{.Config.User}}' myapp:1.0              # 비면 root
 FROM golang:1.23 AS build
 WORKDIR /src
 COPY go.mod go.sum ./
-RUN go mod download                 # 의존성 먼저 → 캐시 적중
+# 의존성 먼저 → 캐시 적중
+RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -o /out/app ./cmd/app
 
@@ -250,7 +278,8 @@ ENTRYPOINT ["/app"]
 **확인.** 먼저 지금 무엇이 겹치는지 본다.
 
 ```bash
-ip route                                             # 사내망/VPN 경로와 docker 브리지 경로 비교
+# 사내망/VPN 경로와 docker 브리지 경로 비교
+ip route
 docker network ls -q | xargs docker network inspect \
   --format '{{.Name}} {{range .IPAM.Config}}{{.Subnet}}{{end}}'
 ```

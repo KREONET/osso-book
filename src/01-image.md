@@ -36,8 +36,10 @@ ISO로 설치하면 마법사에서 누른 선택(파티션·패키지·계정)�
 thin이 항상 이득은 아닙니다. 쓰기 때마다 공간을 늘리므로 단편화·성능 비용이 있고, 호스트 저장소를 *초과 약정(over-provisioning)* 하면 어느 날 갑자기 꽉 차서 VM 전체가 멈춥니다. 반대로 thick은 예측 가능하지만 낭비입니다. 배포용 골든 이미지는 thin(작아서 옮기기 쉬움), 운영 디스크는 용량 계획과 함께 고르는 것이 보통입니다.
 
 ```bash
-qemu-img info ⟨image.img⟩                       # 형식, 가상 크기 vs 실제 크기
-qemu-img convert -O raw ⟨in.qcow2⟩ ⟨out.raw⟩     # 형식 변환 (V2P의 핵심 명령이기도 하다)
+# 형식, 가상 크기 vs 실제 크기
+qemu-img info ⟨image.img⟩
+# 형식 변환 (V2P의 핵심 명령이기도 하다)
+qemu-img convert -O raw ⟨in.qcow2⟩ ⟨out.raw⟩
 ```
 
 `info`의 *virtual size*(게스트가 보는 크기)와 *disk size*(파일이 실제 차지하는 크기)가 다르면 thin입니다.
@@ -51,9 +53,12 @@ qemu-img convert -O raw ⟨in.qcow2⟩ ⟨out.raw⟩     # 형식 변환 (V2P의
 [libguestfs](https://libguestfs.org/) 도구 모음은 이미지를 작은 임시 VM(어플라이언스)으로 열어 그 안의 파일시스템을 대신 만져 줍니다. 읽기용은 이렇습니다.
 
 ```bash
-virt-inspector -a ⟨image.img⟩ | head -40   # OS 종류·버전·설치 앱
-virt-ls  -a ⟨image.img⟩ /etc                # 디렉터리 목록
-virt-cat -a ⟨image.img⟩ /etc/os-release     # 파일 한 개 뽑기
+# OS 종류·버전·설치 앱
+virt-inspector -a ⟨image.img⟩ | head -40
+# 디렉터리 목록
+virt-ls  -a ⟨image.img⟩ /etc
+# 파일 한 개 뽑기
+virt-cat -a ⟨image.img⟩ /etc/os-release
 ```
 
 쓰기용은 `virt-customize`(계정·패키지·파일·첫 부팅 명령)입니다. 디스크를 *진짜 폴더처럼* 마운트하고 싶으면 `qemu-nbd`로 이미지를 블록 장치(`/dev/nbd0`)로 노출한 뒤 `mount`합니다. 두 방식은 용도가 다릅니다. libguestfs는 *안전하고 스크립트하기 좋고*, nbd 마운트는 *호스트 커널이 직접 만지므로 자유롭지만 실수에 취약*합니다. 마운트했으면 반드시 `umount` 후 `--disconnect`로 끝내야 이미지가 깨지지 않습니다.
@@ -71,7 +76,8 @@ virt-cat -a ⟨image.img⟩ /etc/os-release     # 파일 한 개 뽑기
 윈도우는 설정을 레지스트리라는 하나의 불투명한 바이너리 하이브에 넣습니다. `diff`로 비교할 수도, git에 올릴 수도, "이 한 줄만 바꿨다"를 떼어 보여줄 수도 없습니다. 리눅스는 반대입니다. 설정은 **평문 파일**이고, 많은 서비스가 큰 설정 파일 하나가 아니라 그 파일이 작은 조각들을 **불러오는(include)** 구조를 씁니다. 그 조각들이 모인 곳이 `*.d/` 디렉터리입니다.
 
 ```bash
-grep -v '#' /etc/ssh/sshd_config | uniq       # 주석 걷어내고 '실제 설정'만
+# 주석 걷어내고 '실제 설정'만
+grep -v '#' /etc/ssh/sshd_config | uniq
 # → 흔히:  Include /etc/ssh/sshd_config.d/*.conf
 ```
 
@@ -116,13 +122,16 @@ SELinux(Security-Enhanced Linux)는 미국 국가안보국(**NSA**)이 만들어
 그러니 막혔을 때의 올바른 순서는 "끄기"가 아니라 "**읽고 가르치기**"입니다.
 
 ```bash
-sudo ausearch -m avc -ts recent          # 최근 거부(AVC) 로그를 본다 — '무엇이 왜 막혔나'
-sudo ausearch -m avc -ts recent | audit2allow -w   # 사람이 읽는 설명으로 풀어 준다
+# 최근 거부(AVC) 로그를 본다 — '무엇이 왜 막혔나'
+sudo ausearch -m avc -ts recent
+# 사람이 읽는 설명으로 풀어 준다
+sudo ausearch -m avc -ts recent | audit2allow -w
 # 포트를 바꾼 경우(가장 흔함): 새 포트에 라벨을 붙인다 (끄는 게 아니라 '알려 주기')
 sudo semanage port -a -t ssh_port_t -p tcp 2222
 # 비표준 경로/동작이면: 거부 로그로 '최소 정책'을 생성·적용
 sudo ausearch -m avc -ts recent | audit2allow -M mylocalpol && sudo semodule -i mylocalpol.pp
-sudo restorecon -Rv /srv/myapp           # 파일 라벨이 틀어졌을 때 표준 라벨로 복원
+# 파일 라벨이 틀어졌을 때 표준 라벨로 복원
+sudo restorecon -Rv /srv/myapp
 ```
 
 AVC 로그는 사람에게 암호 같아 보이지만 — **여기서 AI가 특히 쓸모 있습니다.** `ausearch` 출력을 그대로 붙여 "이 거부가 왜 났고 최소 권한 정책은 무엇이냐"고 물으면, 어떤 type·포트·경로가 걸렸는지 풀어 주고 `audit2allow` 결과까지 검토해 줍니다. 무턱대고 `allow` 전체를 심는 대신 **딱 필요한 규칙만** 남기도록 — 그게 [Part 7(AI 거버넌스)](07-ai-governance.md)에서 말하는 "AI를 조수로 쓰되 최소 권한 원칙은 사람이 지킨다"의 구체적 사례입니다. 디버깅 중 잠깐 원인을 좁히려면 `setenforce 0`(permissive, **재부팅하면 원복**)로 "지금 끈다면 뜨나?"만 확인하고 곧바로 다시 켜되, 영구 비활성화(`SELINUX=disabled`)는 하지 않습니다.
@@ -152,7 +161,8 @@ AVC 로그는 사람에게 암호 같아 보이지만 — **여기서 AI가 특�
 가장 위험한 순간은 `convert`의 **대상 디바이스를 고르는 때**입니다. `/dev/sda`와 `/dev/sdb`를 바꿔 입력하면 반대쪽이 덮입니다. `lsblk`로 크기·모델·마운트 여부를 눈으로 확인하는 습관이 안전의 전부입니다.
 
 ```bash
-lsblk -o NAME,SIZE,MODEL,MOUNTPOINT    # 쓰기 전에 반드시. 대상이 정말 빈 디스크인가?
+# 쓰기 전에 반드시. 대상이 정말 빈 디스크인가?
+lsblk -o NAME,SIZE,MODEL,MOUNTPOINT
 ```
 
 복구 관점에서 요약하면, 깨끗한 재설치는 V2P, 이 서버 그대로 복원은 Clonezilla, VM이면 Clone입니다. 셋을 모두 갖춘 곳이 "디스크를 날려도 분 단위로 되살리는" 곳입니다.
@@ -184,8 +194,10 @@ lsblk -o NAME,SIZE,MODEL,MOUNTPOINT    # 쓰기 전에 반드시. 대상이 정�
 데이터센터에는 같은 모양의 서버가 줄지어 있습니다. 엉뚱한 장비에 `reboot`하거나 디스크를 `convert`하는 사고는 대개 **내가 어느 장비에 있는지 몰라서** 납니다. 그래서 장비는 여러 층의 이름표를 가져야 하고, 그 이름표들이 서로 일치하는지 확인하는 것이 인수 절차입니다. 사내 위키 「서버 납품 가이드」의 인벤토리 절차를 요약하면 이렇습니다.
 
 ```bash
-sudo inxi -F                      # 모델·시리얼·CPU·메모리·디스크를 한 번에
-sudo ipmitool lan print 1         # BMC의 IP, MAC 주소 (관리망 신원)
+# 모델·시리얼·CPU·메모리·디스크를 한 번에
+sudo inxi -F
+# BMC의 IP, MAC 주소 (관리망 신원)
+sudo ipmitool lan print 1
 ```
 
 - **시리얼/서비스태그:** 제조사가 부여한 고유값. `inxi -F`에서 나오고, 기기 앞뒤 스티커·서비스태그 라벨과 *눈으로 대조*합니다. 제조사 보증·지원 요청의 키이기도 합니다.
@@ -207,7 +219,8 @@ sudo ipmitool lan print 1         # BMC의 IP, MAC 주소 (관리망 신원)
 ```
 
 ```bash
-sudo hostnamectl set-hostname 042-u24-web     # 붓고 난 뒤, 장비마다
+# 붓고 난 뒤, 장비마다
+sudo hostnamectl set-hostname 042-u24-web
 ```
 
 IP 끝자리를 맨 앞에 두면 `ls`·목록에서 IP 순으로 정렬되고, 프롬프트만 보고 바로 `ssh ⟨…⟩.42`를 떠올릴 수 있습니다. OS 약어는 "이 명령이 apt냐 dnf냐"를, 용도는 "여기서 `reboot`해도 되나"를 알려 줍니다. 호스트명에는 영문·숫자·하이픈(`-`)만 쓰고 밑줄(`_`)은 쓰지 않습니다(RFC 1123).
