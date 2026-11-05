@@ -44,6 +44,8 @@
 - [E. 참고자료](E-references.md)
 - [F. 용어집](F-glossary.md)
 - [G. 패키지 관리자](G-packages.md)
+- [H. Proxmox VE 설치·구성·활용](H-pve.md)
+- [I. 네트워크·시스템 접근제어](I-access-control.md)
 
 # AI로 내 교재 만들기
 
