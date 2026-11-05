@@ -32,10 +32,26 @@ virt-cat -a ⟨image.img⟩ /etc/os-release
 # 진짜 파일시스템으로 마운트해서 보기 (qemu-nbd)
 sudo modprobe nbd max_part=8
 sudo qemu-nbd --connect=/dev/nbd0 ⟨image.img⟩
-# 디스크를 폴더처럼
-sudo mount /dev/nbd0p1 /mnt && ls /mnt/etc
+# 디스크 → 파티션 → 파일시스템, 세 겹을 본다. 루트는 몇 번이고 FS는 무엇인가?
+lsblk -f /dev/nbd0
+# 루트 파티션을 폴더처럼 (우분투·데비안 p1, Rocky p4)
+sudo mount /dev/nbd0p⟨1⟩ /mnt && ls /mnt/etc
 sudo umount /mnt; sudo qemu-nbd --disconnect /dev/nbd0
 ```
+
+> 파티션 **번호**는 디스크 안의 **위치**가 아니다. 우분투 이미지는 루트가 1번이지만 디스크 맨 뒤에 있고, 앞쪽은 14·15·16번(BIOS·EFI·`/boot`)이 차지한다. Rocky는 4번이 루트이고 FS가 XFS다. 그래서 번호를 외우지 말고 `lsblk -f`로 확인한다([Part 1 §1.2](../01-image.md)).
+
+⌨️ **키우기 — 이미지는 일부러 작게 온다**
+```bash
+# 가상 크기를 본다 (우분투 3.5 GiB)
+qemu-img info ⟨image.img⟩ | grep 'virtual size'
+# 디스크 겹만 20 GiB로
+qemu-img resize ⟨image.img⟩ 20G
+# 예측: 루트 파일시스템도 20 GiB가 됐을까?
+virt-df -h -a ⟨image.img⟩
+```
+
+👀 `virt-df`의 루트 크기는 **그대로**다. 디스크만 커졌고 안쪽의 파티션과 파일시스템은 아직 옛 크기다. 키우는 방법은 둘이다. cloud-init이 돌면 **첫 부팅 때** 파티션과 파일시스템을 디스크 끝까지 알아서 늘린다. 안 돌면 부팅한 뒤 손으로 세 단계(`growpart` → `resize2fs`/`xfs_growfs`)를 한다. ②에서 `df -h /`로 어느 쪽이었는지 확인한다.
 
 ⌨️ **패치 — 계정·패키지·운영환경·정체성을 심는다(쓰기)**
 ```bash

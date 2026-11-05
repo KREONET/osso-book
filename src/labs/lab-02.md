@@ -72,11 +72,30 @@ htop --version
 cat /etc/machine-id
 # 새 장비엔 새 이름 — ⟨IP끝 3자리⟩-⟨OS⟩-⟨용도⟩
 sudo hostnamectl set-hostname ⟨042-u24-web⟩
+# 예측: 이미지는 작았고 디스크는 20G다. 루트는 지금 몇 G일까?
+lsblk -f
+df -h /
 ```
+
+> 📏 **켜진 채로 디스크 키우기 (PVE).** VM이 켜져 있어도 PVE의 디스크 *Resize*(또는 `qm disk resize ⟨vmid⟩ scsi0 +10G`)는 바로 된다. 하지만 커지는 건 **디스크 겹뿐**이다. 안쪽은 게스트에서 따로 키운다.
+>
+> ```bash
+> # 디스크가 커졌는지, 루트가 몇 번이고 FS가 무엇인지
+> lsblk -f
+> # 우분투·데비안 (루트 p1, ext4)
+> sudo growpart /dev/⟨sda⟩ 1
+> sudo resize2fs /dev/⟨sda1⟩
+> # Rocky (루트 p4, XFS — 장치가 아니라 마운트 지점을 준다)
+> sudo growpart /dev/⟨sda⟩ 4
+> sudo xfs_growfs /
+> df -h /
+> ```
+>
+> cloud-init이 도는 VM이라면 재부팅만으로도 된다(부팅할 때마다 같은 일을 한다). 줄이기는 안 된다고 생각하자([Part 1 §1.2](../01-image.md)).
 
 > 💡 VM이 많아지면 `ubuntu@ubuntu`로는 헷갈린다. **`⟨IP 끝자리 3자리⟩-⟨u24 같은 OS약어⟩-⟨용도⟩`** 처럼 이름에 정보를 넣으면 프롬프트만 보고 "어디냐·apt냐 dnf냐·재부팅해도 되냐"가 보인다. OS 버전·IP는 어차피 `/etc/os-release`·`ip a`로 누구나 보는 정보라 보안 손해는 거의 없고 편의는 크다([Part 1 §1.7](../01-image.md)).
 
-👀 **보이는 것:** 처음엔 부팅 실패 → convert 100% → 디스크·USB 떼고 부팅하면 **OS가 뜨고**, 내 패치(htop)와 **새 정체성**이 확인됨. 설치 마법사 한 번 안 거쳤다.
+👀 **보이는 것:** 처음엔 부팅 실패 → convert 100% → 디스크·USB 떼고 부팅하면 **OS가 뜨고**, 내 패치(htop)와 **새 정체성**이 확인됨. 작은 이미지(우분투 3.5G)를 20G 디스크에 부었다. `df -h /`가 20G 가까이면 cloud-init이 첫 부팅 때 늘린 것이고, 그대로면 cloud-init이 꺼져 있는 것(`cloud-init status`) — 아래 📏 박스의 세 단계로 손수 키운다. 설치 마법사 한 번 안 거쳤다.
 
 💡 **느낄 것:** 클론은 **되돌리기**, V2P는 **맨 디스크에 붓기**. 준비된 이미지만 있으면 디스크를 날려도 분 단위로 되살린다 — 현장에선 이 Ventoy USB를 들고 가 꽂으면 끝. ①의 오프라인 편집이 여기까지 한 줄기로 이어진다.
 
