@@ -34,6 +34,7 @@
 | ohmyzsh 태그 (TAG1/TAG2) | 물리 서버의 `/etc/tag1`(모델)·`/etc/tag2`(자산 ID)를 프롬프트에 표시하는 강사 개인 컨벤션. 소개만 하고 실습하지 않는다. |
 | 호스트명 규칙 | VM 구분용 이름 짓기 예: `⟨IP 끝자리 3자리⟩-⟨OS약어⟩-⟨용도⟩` (예: `042-u24-web`). |
 | ProxyJump | `ssh -J`. 중간 서버(bastion)를 경유해 대상에 접속한다. bastion sshd의 `AllowTcpForwarding`이 허용돼 있어야 한다. |
+| 패키지 관리자 | 정해진 저장소에서 프로그램을 받아 서명 검증·의존성 설치·업데이트·제거를 해 주는 도구(apt, dnf, Homebrew, WinGet). 설치 목록을 파일로 내보내 다시 설치할 수 있다. → [부록 G](G-packages.md) |
 | PATH | 명령 이름을 찾을 디렉터리 목록인 환경변수. 왼쪽부터 찾으며 리눅스는 현재 디렉터리를 뒤지지 않는다. → [Part 4 §4.0](04-container.md) |
 | PUEL | VirtualBox Extension Pack의 라이선스. 개인·평가용만 무료, 기관은 유료. → [부록 B](B-licenses.md) |
 | SNAT | 출발지 주소 변환. 내부 대역이 외부로 나갈 때(masquerade) 쓴다. |

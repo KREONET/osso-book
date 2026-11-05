@@ -43,6 +43,7 @@
 - [D. 명령어 치트시트 (Runbook)](D-cheatsheet.md)
 - [E. 참고자료](E-references.md)
 - [F. 용어집](F-glossary.md)
+- [G. 패키지 관리자](G-packages.md)
 
 # AI로 내 교재 만들기
 

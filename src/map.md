@@ -30,6 +30,7 @@
 | AI에게 서버 상태를 조사시키고 싶다 | [⑬ AI에게 서버 조사시키기](labs/lab-13.md) | [Part 7](07-ai-governance.md) |
 | 연구원이 AI로 만든 앱을 띄우고 싶어 한다 | [⑭ AI 배포 캡스톤](labs/lab-14.md) | [Part 7](07-ai-governance.md) |
 | 이거 써도 되나? (Anaconda·VirtualBox 라이선스) | [부록 B 라이선스](B-licenses.md) | [Part 1 §1.8](01-image.md) |
+| 새 컴퓨터를 내 컴퓨터처럼 빨리 세팅하고 싶다 (Homebrew·WinGet·apt) | [부록 G 패키지 관리자](G-packages.md) | [Part 1 §1.3 점 파일](01-image.md) |
 | 명령어만 빨리 찾고 싶다 | [부록 D 치트시트](D-cheatsheet.md) | — |
 
 ## 줄기 넷 — 실습끼리 이어지는 길

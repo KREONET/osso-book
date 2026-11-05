@@ -152,7 +152,7 @@ ls -a ~
 | `~/.gitconfig` | git 이름·이메일·별명 |
 | `~/.tmux.conf` | 터미널 분할 도구 설정 |
 
-**조직의 암묵지는 점 파일에 있습니다.** 고수가 빠른 이유의 상당 부분은 손이 아니라 몇 년 동안 다듬은 `alias` 몇 줄, `~/.ssh/config`의 접속 별명, `.vimrc` 몇 줄입니다. 그런데 이건 그 사람 홈 디렉터리에 숨어 있어서(말 그대로 `ls`로 안 보여서) 아무도 모릅니다. 그래서 컴퓨터를 잘 다루는 사람들은 자기 점 파일을 **GitHub에 저장소로 올려 두고**(흔히 `dotfiles`라는 이름) 새 장비마다 그대로 내려받습니다. GitHub에서 `dotfiles`로 검색하면 수많은 예가 나옵니다.
+**조직의 암묵지는 점 파일에 있습니다.** 고수가 빠른 이유의 상당 부분은 손이 아니라 몇 년 동안 다듬은 `alias` 몇 줄, `~/.ssh/config`의 접속 별명, `.vimrc` 몇 줄입니다. 그런데 이건 그 사람 홈 디렉터리에 숨어 있어서(말 그대로 `ls`로 안 보여서) 아무도 모릅니다. 그래서 컴퓨터를 잘 다루는 사람들은 자기 점 파일을 **GitHub에 저장소로 올려 두고**(흔히 `dotfiles`라는 이름) 새 장비마다 그대로 내려받습니다. GitHub의 [`dotfiles` 토픽](https://github.com/topics/dotfiles)에 수많은 예가 모여 있습니다. 설치한 프로그램 목록(Brewfile, `winget export`)까지 같이 넣어 두는 방법은 [부록 G](G-packages.md)에서.
 
 팀으로 넓히면 효과가 더 큽니다. **팀이 점 파일을 공유하면** 신입은 첫날부터 선배와 같은 별명·같은 도구·같은 프롬프트로 일합니다. 온보딩 문서를 읽는 것보다 빠르고, 개인 편차가 줄어듭니다. 실습①에서 심는 KREONET [ohmyzsh](https://github.com/KREONET/ohmyzsh) 운영환경이 바로 그런 **조직 공용 점 파일**입니다.
 
@@ -371,6 +371,8 @@ conda에는 함정이 하나 있습니다. **Anaconda 배포판의 기본 채널
 | 재현 | "위에서부터 다시 실행"해야 확인 | 항상 현재 코드와 결과가 일치 |
 
 핵심은 *숨은 상태*입니다. Jupyter에서는 지운 셀의 변수가 메모리에 남아 결과가 "우연히" 맞을 수 있고, 그 노트북은 다른 사람 컴퓨터에서 재현되지 않습니다. marimo는 이 가능성을 구조적으로 차단하며, `.py`라서 코드 리뷰와 git 이력에 그대로 올라갑니다. 의존성은 노트북 상단에 선언하고(`uv`와 궁합이 좋습니다) 실행하면 재현 환경이 한 파일에 담깁니다.
+
+설치 목록을 파일로 남기고 다시 까는 법(apt·dnf·Homebrew·WinGet)과 언어별 관리 도구 표는 [부록 G](G-packages.md)에 모았습니다.
 
 더 깊이: [conda-forge](https://conda-forge.org/), [miniforge](https://github.com/conda-forge/miniforge), [Anaconda 서비스 약관](https://www.anaconda.com/legal), [marimo 문서](https://docs.marimo.io/).
 
