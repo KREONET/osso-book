@@ -102,6 +102,34 @@ ls /etc/ssl/certs | head
 | 와일드카드(`*.lab.example`) | 불가 | **가능** |
 | 필요한 권한 | 웹서버 설정 | DNS 수정 권한 |
 
+### Let's Encrypt — 인증서를 공짜로, 자동으로
+
+예전에는 인증서를 돈 주고 사서, 1~2년마다 사람이 손으로 갱신했습니다. 그래서 작은 기관·개인 사이트는 HTTPS를 안 했고, 갱신을 잊어 사이트가 멈추는 일도 흔했습니다. 이걸 바꾼 것이 **Let's Encrypt**입니다.
+
+- **누가:** 비영리 단체 **ISRG**(Internet Security Research Group, 미국 501(c)(3) 비영리)가 운영합니다. 2013년 5월에 세워졌고, 창립 후원·협력 기관은 **Mozilla, EFF(전자프런티어재단), 미시간 대학교, Cisco, Akamai**입니다. 2015년 12월 일반에 인증서 발급을 시작했고, 지금은 7억 개가 넘는 웹사이트에 인증서를 줍니다.
+- **돈은 어디서:** 인증서는 무료이고, 운영비는 후원으로 충당합니다. 2026년 11월 기준 최상위 후원 등급에 **Google, AWS, Microsoft**, 그다음 등급에 **Mozilla, EFF, Meta, OVH, Internet Society**, 그 아래에 **Cisco, IBM, Shopify, SAP** 등이 있습니다. 경쟁하는 글로벌 대기업들과 인터넷 자유를 위한 재단들이 **같은 CA 하나를 함께 떠받치고** 있는 셈입니다. "모든 웹이 암호화되는 것"이 모두에게 이익이기 때문입니다.
+- **어떻게:** 사람이 신청서를 쓰는 대신 위의 **ACME** 프로토콜로 기계가 자동으로 발급·갱신합니다. 인증서 수명이 90일로 짧은 것도 일부러입니다. 짧으면 키가 새어도 피해 기간이 짧고, 사람이 손으로 갱신하는 걸 포기하고 **자동화하게** 만듭니다.
+
+### Caddy — HTTPS가 기본값인 웹 서버
+
+이 책의 실습([⑩](labs/lab-10.md)·[⑪](labs/lab-11.md)·[⑨′](labs/lab-09p.md))에서 웹 서버·리버스 프록시로 쓰는 **[Caddy](https://caddyserver.com/)** 는 Go로 만든 오픈소스(Apache 2.0) 웹 서버입니다. 다른 웹 서버와 가장 다른 점은 **HTTPS가 기본값**이라는 것입니다. 도메인 이름만 적으면 나머지를 알아서 합니다.
+
+```
+# Caddyfile — 이 세 줄이 전부다
+example.org {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+이 설정으로 Caddy는 다음을 **자동으로** 합니다.
+
+- Let's Encrypt에서 `example.org` 인증서를 받는다 (실패하면 ZeroSSL로 다시 시도)
+- 만료 전에 알아서 갱신한다
+- `http://`로 온 요청을 `https://`로 돌려보낸다
+- `localhost`·IP 주소·내부 이름처럼 공인 인증서를 받을 수 없는 이름에는 **자기만의 로컬 CA**를 만들어 서명한다 — [5.3 프라이빗 CA](#53-프라이빗-ca--내가-신뢰의-뿌리)와 같은 원리
+
+nginx·Apache로 같은 일을 하려면 웹 서버 설정, certbot 설치, 갱신 타이머, 리다이렉트 설정을 따로 해야 합니다. 설정이 짧을수록 실수가 줄고, 실수가 줄수록 안전합니다.
+
 ### 최소권한 — `_acme-challenge`만 위임
 
 DNS-01의 약점은 "DNS를 고칠 권한"이 곧 **존 전체의 권한**이라는 점입니다. API 토큰이 새면 `www`, `mail`, MX까지 바꿀 수 있습니다. 해법은 챌린지만 따로 위임하는 것입니다.
@@ -133,6 +161,8 @@ echo | openssl s_client -connect svc.demo.example:443 -servername svc.demo.examp
 
 - [RFC 8555 — ACME](https://www.rfc-editor.org/rfc/rfc8555)
 - [Let's Encrypt — Challenge Types](https://letsencrypt.org/docs/challenge-types/)
+- [ISRG 소개](https://www.abetterinternet.org/about/) · [후원 기관 목록](https://www.abetterinternet.org/sponsors/) — Let's Encrypt를 운영하는 비영리 단체와 그 후원자
+- [Caddy — Automatic HTTPS](https://caddyserver.com/docs/automatic-https) — 자동으로 하는 일의 전체 목록
 - [acme-dns 프로젝트](https://github.com/joohoi/acme-dns)
 - [Caddy — Automatic HTTPS](https://caddyserver.com/docs/automatic-https)
 
@@ -235,7 +265,7 @@ curl https://srv.lab.local/
 
 5.4에서 한 일을 다시 떠올려 보세요. "누군가의 CA 인증서를 내 키스토어에 심으면, 그 누군가가 서명한 **어떤 도메인의 인증서든** 내 기기는 믿는다." 이것은 편리한 기능이자, 동시에 **열쇠를 넘기는 행위**입니다.
 
-회사의 **TLS 복호화(DPI, Deep Packet Inspection) 장비**는 정확히 이 원리로 동작합니다.
+회사의 **TLS 복호화(DPI, Deep Packet Inspection) 장비**는 정확히 이 원리로 동작합니다. 한마디로 **회사가 합법적으로 하는 중간자 공격(MITM, Man-in-the-Middle)** 입니다. 공격자가 몰래 하면 범죄인 바로 그 기술을, 기관이 자기 업무망·업무 기기에 대해 내부 규정과 사용자 고지를 근거로 공개적으로 하는 것입니다.
 
 ```mermaid
 flowchart LR

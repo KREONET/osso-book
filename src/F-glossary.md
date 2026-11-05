@@ -15,6 +15,8 @@
 | CVE | 공개된 취약점의 표준 식별 번호(예: CVE-2024-xxxx). |
 | dotfile (점 파일) | 이름이 `.`으로 시작하는 숨김 파일(`ls -a`로 보임). `~/.bashrc`·`~/.ssh/config` 같은 사용자 설정. 팀이 공유하면 온보딩과 편차 줄이기에 효과적이다. → [Part 1 §1.3](01-image.md) |
 | authorized_keys | 서버의 `~/.ssh/authorized_keys`. 이 계정에 들어올 수 있는 **공개키**를 한 줄에 하나씩 적는 파일(디렉터리 700·파일 600). → [Part 6 §6.1](06-access.md) |
+| Let's Encrypt | 비영리 단체 ISRG가 운영하는 무료 공인 CA(2015~). ACME로 자동 발급·갱신하며, 글로벌 기업과 EFF·Mozilla 등의 후원으로 운영된다. → [Part 5 §5.2](05-trust.md) |
+| Caddy | HTTPS가 기본값인 오픈소스 웹 서버·리버스 프록시. 인증서 발급·갱신·리다이렉트를 자동으로 한다. → [Part 5 §5.2](05-trust.md) |
 | DNAT | 목적지 주소 변환. 외부 포트를 내부 서비스로 포워딩할 때 쓴다. |
 | DNS-01 | ACME 검증 방식. DNS TXT 레코드로 소유를 증명한다(와일드카드 가능). |
 | DOCKER-USER | Docker가 FORWARD 앞에 두는 사용자 정의 iptables 체인. 컨테이너 방화벽을 여기서 건다. |
