@@ -4,6 +4,8 @@
 
 🖥️ **랩:** 작업 VM. 이미지 사전 pull 완료(전원만 켜면 됨).
 
+> 컨테이너가 "격리된 프로세스"라는 게 와닿지 않는다면, 먼저 [Part 4 §4.0](../04-container.md)에서 fork·exec, `export`, `PATH`, `ps auxf`의 두 그루 나무를 손으로 확인하고 오자. 5분이면 된다.
+
 ⌨️ **(1) 띄우기** — 쓸만한 오픈소스 하나 (예: Uptime Kuma·Dozzle·NocoDB·Gitea·Outline 중 택1)
 ```bash
 git clone ⟨https://github.com/kreonet/demo-⟨uptime-kuma⟩⟩ && cd demo-⟨uptime-kuma⟩
@@ -79,6 +81,8 @@ psql is an alias for docker exec -it pg psql -U postgres
 > 컨테이너 이름은 `docker ps`의 NAMES 열에서, DB 이름은 그 서비스의 설정에서 확인한다. alias는 `~/.zshrc`(①의 ohmyzsh 운영환경)에 넣어 두면 장비마다 따라온다.
 
 👀 **보이는 것:** 호스트에는 `psql`이 없는데 `psql`이 된다. `type`으로 보면 정체는 `docker exec`. 버전은 컨테이너 이미지의 것(16)이다.
+
+> 💭 `docker inspect pg --format '{{json .Config.Env}}'`도 쳐 보자. `PATH` 끝에 `/usr/lib/postgresql/16/bin`이 붙어 있다 — 컨테이너 안에서 `psql`을 경로 없이 부를 수 있는 이유다([Part 4 §4.0](../04-container.md)).
 
 💡 컨테이너를 "서비스"로만 보지 말고 **로컬 도구함**으로. `alias`가 그 다리 — ①의 ohmyzsh 운영환경과 **같은 결**(편의를 환경에 심는다). 클라이언트를 따로 깔지 않으니 **서버와 버전이 어긋날 일도 없다.** 다 봤으면 `docker rm -f pg`.
 

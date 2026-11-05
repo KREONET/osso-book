@@ -4,6 +4,214 @@
 
 이 장의 한 줄: **컨테이너는 "작은 VM"이 아니라 "선언된 프로세스"다.** 선언은 파일에 남고, 나갈 수 있는 길도 선언으로 그린다.
 
+## 4.0 컨테이너 이전에 — 프로세스, 환경변수, 격리
+
+**멘탈모델.** 컨테이너는 새 발명이 아니다. **운영체제가 원래 하던 "나눠 쓰기"를 더 촘촘하게 쓴 프로세스**다. 그래서 컨테이너를 이해하려면 먼저 프로세스가 어떻게 태어나고, 무엇을 물려받는지를 알아야 한다.
+
+### 컴퓨터는 처음부터 나눠 쓰는 물건이었다
+
+컴퓨터는 한 사람의 책상이 아니라 **중앙의 메인프레임**에서 시작했습니다. 비싼 기계 한 대를 여러 사람이 단말기로 붙어 시간을 쪼개 썼습니다(시분할). 그러니 운영체제는 처음부터 이런 일을 해야 했습니다.
+
+- **사용자별 격리:** 내 프로세스와 파일은 남이 못 건드린다 (UID, 파일 권한)
+- **자원 쿼터:** 한 사람이 디스크·CPU·메모리를 다 차지하지 못하게 한다 (디스크 쿼터, `ulimit`)
+- **보이는 범위 제한:** 1979년 유닉스 V7의 `chroot`는 "이 프로세스에게는 이 디렉터리가 `/`다"라고 속였다
+
+리눅스는 이걸 두 갈래로 더 촘촘하게 만들었습니다.
+
+| 기능 | 하는 일 | 나누는 것 | 들어온 때 |
+| --- | --- | --- | --- |
+| **namespace** | **무엇이 보이나** (격리) | 프로세스 번호(pid), 네트워크(net), 마운트(mnt), 호스트명(uts), 사용자(user) 등 | 2002년 mnt부터 하나씩, user는 2013년 |
+| **cgroup** | **얼마나 쓰나** (쿼터·회계) | CPU, 메모리, 디스크 I/O, 프로세스 수 | 2008년 (2.6.24) |
+
+cgroup은 구글 엔지니어들이 "process containers"라는 이름으로 제안한 것이 시작이고, 바로 위의 쿼터 일을 프로세스 묶음 단위로 하는 장치입니다. **컨테이너 = namespace(격리) + cgroup(쿼터) + 이미지(파일시스템 꾸러미)** 를 한 번에 쓰기 좋게 포장한 것입니다. LXC(2008)가 먼저 했고, Docker(2013)가 이걸 "이미지 한 줄로 배포"하는 경험으로 만들었습니다.
+
+```bash
+# 지금 내 셸이 속한 namespace들 — 이 번호가 같으면 같은 세상을 본다
+ls -l /proc/$$/ns
+# 내 셸이 속한 cgroup
+cat /proc/self/cgroup
+# 시스템 전체를 cgroup 트리로
+systemd-cgls --no-pager | head -30
+```
+
+`docker run --memory 256m`은 그 컨테이너의 cgroup에 메모리 한도를 적는 것이고, 컨테이너 안에서 `ps`를 치면 프로세스가 몇 개 안 보이는 건 pid namespace 때문입니다.
+
+### 네트워크 스택 한 벌 — 컨테이너 네트워크가 유독 어려운 이유
+
+net namespace를 새로 만들면 **네트워크 스택이 통째로 한 벌** 생깁니다. 인터페이스, IP, 라우팅 표, 방화벽 규칙, 소켓과 포트가 모두 따로입니다.
+
+```bash
+docker run --rm alpine ip addr
+```
+
+```text
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    inet 127.0.0.1/8 scope host lo
+2: eth0@if61: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP
+    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+```
+
+호스트에 인터페이스가 여럿 있어도 컨테이너에게는 `lo`와 `eth0` 둘뿐입니다. `eth0@if61`의 `@if61`은 "호스트 쪽 61번 인터페이스와 짝인 가상 케이블(veth)"이라는 뜻입니다.
+
+그리고 리눅스 커널에서 네트워크는 **큰 덩어리**입니다. 2026년 11월 기준 커널 소스(`.c`·`.h`)를 크기로 재 보면, 프로토콜 스택(`net/`)만 34 MB로 프로세스·스케줄러(`kernel/`, 16 MB)와 메모리 관리(`mm/`, 6 MB)를 합친 것보다 큽니다. 네트워크 카드 드라이버(`drivers/net/`, 153 MB)까지 더하면 전체의 약 13%, 자동 생성된 GPU 레지스터 헤더(전체의 43%)를 빼고 보면 약 5분의 1입니다. 그만큼 기능도, 규칙도, 함정도 많습니다. 컨테이너가 이 스택을 한 벌씩 따로 갖고, 그 사이를 브리지·NAT·방화벽 규칙으로 잇다 보니 [실습③](labs/lab-03.md)의 "ufw가 왜 뚫리지", [⑨′](labs/lab-09p.md)의 egress, [4.5](#45-이미지-빌드--dockerfile-비루트non-root-멀티스테이지-대역-겹침)의 대역 겹침 같은 문제가 생깁니다.
+
+### 프로세스는 복제로 태어난다 — fork, exec, wait
+
+셸에서 `sleep 3`을 치면 이런 일이 일어납니다.
+
+```
+bash (PID 100)
+  │ ① fork  — 자기 자신을 복제한다 → bash (PID 101), 부모는 100
+  │ ② exec  — 101번이 자기 몸을 /usr/bin/sleep 프로그램으로 갈아 끼운다
+  │ ③ wait  — 100번(셸)은 101번이 끝나길 기다린다
+  ▼
+101번 종료 → 셸이 다시 프롬프트를 띄운다
+```
+
+POSIX의 `fork`는 지금 프로세스를 **메모리까지 통째로 복제**합니다(실제로는 바로 복사하지 않고, 둘 중 하나가 쓰려고 할 때 그 부분만 복사하는 copy-on-write라서 빠릅니다). 그다음 `exec`가 그 복제본의 내용을 **새 프로그램으로 갈아 끼웁니다.** 프로그램을 띄우는 일이 언제나 "복제 → 갈아 끼우기"라서, 모든 프로세스에는 **부모**가 있고, 그래서 프로세스는 **트리**가 됩니다.
+
+```bash
+# 지금 셸의 PID와 그 부모
+echo "나: $$, 부모: $PPID"
+# 셸 안에서 셸을 하나 더 — 새 PID, 부모는 아까 그 셸
+bash -c 'echo "나: $$, 부모: $PPID"'
+# 백그라운드로 하나 띄우고 트리로 보기
+sleep 30 &
+ps -o pid,ppid,cmd --forest
+```
+
+여기서 재미있는 결론 하나. **`cd`는 프로그램이 아닙니다.** 자식 프로세스는 자기 작업 디렉터리만 바꿀 수 있고 부모의 것은 못 바꿉니다. `cd`가 `/usr/bin/cd`라는 프로그램이었다면 fork된 자식이 디렉터리를 바꾸고 죽을 뿐, 셸은 그대로였을 겁니다. 그래서 `cd`·`export`는 셸 **안에** 들어 있는 내장 명령입니다.
+
+```bash
+# builtin — 셸 내장
+type cd
+# /usr/bin/ls — 디스크의 프로그램
+type ls
+```
+
+### 환경변수 — 자식에게 물려주는 쪽지
+
+`exec`로 몸을 갈아 끼우면 부모에게서 복제한 메모리는 사라집니다. 그런데 딱 하나, 갈아 끼울 때 **함께 넘겨주는 쪽지 묶음**이 있습니다. 그게 **환경변수**입니다. 셸 변수 중 `export`한 것만 이 쪽지에 적힙니다.
+
+```bash
+A=hello
+# 같은 셸 안에서는 둘 다 보인다
+echo "[$A]"
+# 자식 프로그램(bash -c)에게는? — export 전
+bash -c 'echo "[$A]"'
+export A
+# export 후
+bash -c 'echo "[$A]"'
+```
+
+```text
+[hello]
+[]
+[hello]
+```
+
+- `A=hello`는 **이 셸의 메모리에만** 있는 셸 변수. `export A`를 하면 자식에게 넘길 **환경변수**가 된다.
+- 쪽지는 **부모 → 자식 한 방향**이다. 자식이 `export`해도 부모에게는 돌아오지 않는다. 그래서 `~/.bashrc`의 `export`는 "앞으로 이 셸이 띄울 모든 프로그램에게"라는 뜻이다.
+- 한 번만 넘기려면 명령 앞에 붙인다: `A=hello bash -c 'echo "[$A]"'`
+- 환경변수 목록은 `env`, 셸 변수까지 전부는 `set`.
+
+> 💭 `( echo "[$A]" )`처럼 괄호 서브셸에서는 export 안 한 `A`도 보인다. 괄호는 fork만 하고 exec는 하지 않아서, 복제된 메모리에 `A`가 그대로 있기 때문이다. 위의 fork·exec 구분을 이해했는지 스스로 확인해 보기 좋은 예다.
+
+### PATH — `ls`는 어디서 찾나
+
+`ls`를 쳤을 때 셸은 지금 디렉터리를 뒤지지 않습니다. **환경변수 `PATH`에 적힌 디렉터리들을 왼쪽부터 차례로** 뒤져서 처음 찾은 `ls`를 실행합니다.
+
+```bash
+# 콜론(:)으로 구분된 목록 — 한 줄에 하나씩
+echo "$PATH" | tr ':' '\n'
+# ls가 어느 디렉터리에서 발견되나 (같은 이름이 여럿이면 전부)
+type -a ls
+# 내 디렉터리를 맨 앞에 — 같은 이름이면 앞쪽이 이긴다
+export PATH="$HOME/bin:$PATH"
+```
+
+- **윈도우와 같은 개념이다.** 윈도우의 *시스템 속성 → 환경 변수 → Path*가 바로 이것이다(구분자만 `;`). 다만 윈도우 `cmd`는 **현재 폴더를 먼저** 뒤지고, 리눅스는 **현재 디렉터리를 뒤지지 않는다.**
+- 그래서 리눅스에서 지금 디렉터리의 스크립트는 `./script.sh`로 경로를 붙여야 실행된다. 누군가 `/tmp`에 가짜 `ls`를 놓아 두어도, 내가 `cd /tmp` 한 뒤 `ls`를 쳤을 때 그게 실행되지 않게 하려는 **보안상의 선택**이다.
+- 같은 이유로 `PATH` 맨 앞에 남이 쓸 수 있는 디렉터리를 넣으면 안 된다.
+- bash는 한 번 찾은 위치를 기억해 둔다(`hash`로 보인다). 프로그램을 옮겼는데 옛 위치를 찾으면 `hash -r`.
+
+### 프로세스 트리를 보면 — 두 그루의 나무와 [대괄호]
+
+```bash
+ps auxf | head -20
+```
+
+맨 위에 이런 줄들이 보입니다.
+
+```text
+root   2  ...  [kthreadd]
+root   3  ...   \_ [pool_workqueue_release]
+root   4  ...   \_ [kworker/R-rcu_gp]
+```
+
+`ps auxf`에는 나무가 **두 그루** 있습니다.
+
+- **PID 1 (`systemd`)** — 사용자 공간의 뿌리. 로그인 셸, 서비스, 컨테이너 런타임이 모두 이 아래로 이어진다.
+- **PID 2 (`kthreadd`)** — **커널 스레드**의 뿌리. `[대괄호]`로 보이는 것들이 그 자식이다.
+
+대괄호는 "**명령줄이 없다**"는 표시입니다. 커널 스레드는 디스크의 프로그램 파일을 `exec`해서 뜬 게 아니라 커널 안에서 커널이 직접 만든 작업자라서 `/proc/⟨PID⟩/cmdline`이 비어 있고, `ps`는 그럴 때 이름을 대괄호로 감쌉니다. 이름을 보면 무슨 일을 하는지 대략 보입니다.
+
+| 커널 스레드 | 하는 일 |
+| --- | --- |
+| `[kworker/…]` | 커널의 잡일 대기열(workqueue) 처리 |
+| `[ksoftirqd/0]` | 인터럽트 뒤처리 — 네트워크 패킷이 몰리면 이게 CPU를 먹는다 |
+| `[kswapd0]` | 메모리가 모자랄 때 회수 |
+| `[jbd2/vda1-8]` | ext4 파일시스템의 저널 기록 (`vda1`의 것) |
+
+`PID 1`과 `PID 2`의 부모는 둘 다 **0**입니다. 0번은 부팅할 때의 커널 자신이라 목록에 나오지 않습니다. 예전 커널에서는 커널 스레드도 init(PID 1) 아래에 붙어 한 그루로 보였지만, 지금은 `kthreadd`가 모든 커널 스레드의 부모를 맡아서 두 그루로 나뉩니다.
+
+systemd 이후에는 트리를 보는 눈이 하나 더 생겼습니다. 옛 init.d 스크립트의 데몬은 스스로 두 번 fork해서 부모를 떠나는 방식이라, 누가 무엇을 띄웠는지 트리만으로는 추적이 어려웠습니다. systemd는 서비스마다 **cgroup을 하나씩** 주고 그 안의 프로세스를 모두 추적합니다. 그래서 "이 프로세스가 어느 서비스 소속인가"는 `ps auxf`보다 `systemd-cgls`가 정확합니다. 컨테이너도 같습니다. 호스트에서 `ps auxf`를 보면 컨테이너의 프로세스가 `containerd-shim-runc-v2` 아래에 매달려 있고, 컨테이너 안에서 보면 그 프로세스가 **PID 1**입니다. 같은 프로세스가 pid namespace에 따라 다른 번호로 보이는 것입니다.
+
+### 컨테이너의 환경변수 — `docker inspect`의 Env
+
+컨테이너의 첫 프로세스(PID 1)도 결국 `exec`로 뜹니다. 그때 넘겨주는 쪽지 묶음이 `docker inspect`의 `Config.Env`입니다. 곧 **export된 환경변수 목록**입니다.
+
+```bash
+docker run -d --name pgenv -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16
+docker inspect pgenv --format '{{json .Config.Env}}'
+docker rm -f pgenv
+```
+
+```text
+["POSTGRES_HOST_AUTH_METHOD=trust","PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/postgresql/16/bin","GOSU_VERSION=1.19","LANG=en_US.utf8","PG_MAJOR=16","PG_VERSION=16.15-1.pgdg13+2","PGDATA=/var/lib/postgresql/data"]
+```
+
+내가 `-e`로 준 것 하나에, **이미지의 Dockerfile `ENV`** 로 정해진 것들(`PATH`·`PG_VERSION` 등)이 더해져 있습니다. `PATH`에 `/usr/lib/postgresql/16/bin`이 들어 있어서 컨테이너 안에서 `psql`을 경로 없이 칠 수 있는 겁니다.
+
+compose에서 컨테이너로 들어가는 길은 `environment:`와 `env_file:`입니다. ⚠️ **프로젝트 디렉터리의 `.env` 파일은 자동으로 컨테이너에 들어가지 않습니다.** `.env`는 `compose.yaml` 안의 `${TAG}` 같은 자리를 채우는 데 쓰입니다. 직접 해 보면 이렇습니다.
+
+```bash
+mkdir envtest && cd envtest
+printf 'FOO=from_dotenv\nTAG=3.20\n' > .env
+cat > compose.yaml <<'EOF'
+services:
+  app:
+    image: alpine:${TAG}
+    command: sleep 300
+    environment:
+      BAR: "set_in_compose"
+EOF
+docker compose up -d
+# 예측: FOO와 BAR가 둘 다 보일까?
+docker inspect envtest-app-1 --format '{{json .Config.Env}}'
+docker compose down -t 0
+```
+
+```text
+["BAR=set_in_compose","PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]
+```
+
+`TAG`는 이미지 태그(`alpine:3.20`)를 채우는 데 쓰였지만 `FOO`는 컨테이너에 없습니다. `.env`의 값을 컨테이너에 넣으려면 `env_file: .env`를 쓰거나 `environment:`에 `FOO: ${FOO}`처럼 명시합니다.
+
+⚠️ 환경변수는 **비밀을 두기에 좋은 곳이 아닙니다.** `docker` 권한이 있는 사람은 누구나 `docker inspect`로 평문을 보고, 컨테이너 안에서는 `/proc/1/environ`으로 보입니다. 비밀번호·토큰은 읽기 전용으로 마운트한 파일로 넘기는 편이 낫습니다(많은 공식 이미지가 `POSTGRES_PASSWORD_FILE`처럼 `_FILE` 변수를 지원합니다).
+
+더 깊이: [namespaces(7)](https://man7.org/linux/man-pages/man7/namespaces.7.html), [cgroups(7)](https://man7.org/linux/man-pages/man7/cgroups.7.html), [fork(2)](https://man7.org/linux/man-pages/man2/fork.2.html), [execve(2)](https://man7.org/linux/man-pages/man2/execve.2.html), [environ(7)](https://man7.org/linux/man-pages/man7/environ.7.html), [Docker Compose: 환경변수 우선순위와 .env](https://docs.docker.com/compose/how-tos/environment-variables/).
+
 ## 4.1 컨테이너 vs VM — 과잉설계 경계
 
 **멘탈모델.** VM은 *컴퓨터 한 대*를 흉내 낸다(커널까지 따로). 컨테이너는 *호스트 커널 위의 격리된 프로세스*다(namespace + cgroup). 그래서 VM은 "OS를 운영"하고, 컨테이너는 "프로그램 하나를 운영"한다.

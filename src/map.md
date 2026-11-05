@@ -11,6 +11,7 @@
 | 디스크가 죽었다 / 랜섬웨어가 걱정된다 / 되돌리고 싶다 | [② 배포·복원](labs/lab-02.md) | [Part 1 §1.5](01-image.md) |
 | 루트 비번을 잃어버렸다 | [②ⓕ 루트 비번 복구](labs/lab-02.md) | [Part 1 §1.6](01-image.md) |
 | RHEL에서 설정은 맞는데 서비스가 안 뜬다 | [①의 SELinux 경고](labs/lab-01.md) | [Part 1 §1.4](01-image.md) |
+| 컨테이너가 뭔지, 프로세스·환경변수·`PATH`부터 감을 잡고 싶다 | [⑨ compose로 띄우고 써보기](labs/lab-09.md) | [Part 4 §4.0](04-container.md) |
 | ufw를 켰는데 도커 포트가 밖에서 열려 있다 | [③ ufw가 왜 뚫리지](labs/lab-03.md) | [Part 2](02-firewall.md) |
 | firewalld의 zone이 헷갈린다 | [④ firewalld trusted zone](labs/lab-04.md) | [Part 2](02-firewall.md) |
 | 로그에 모르는 IP가 계속 두드린다 | [⑤ 인바운드 선차단](labs/lab-05.md) | [Part 2 §2.5](02-firewall.md) |
