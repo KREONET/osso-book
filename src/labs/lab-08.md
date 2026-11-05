@@ -10,16 +10,26 @@ ssh-keygen -lf ~/.ssh/id_ed25519.pub
 
 # 2) 공개키를 '공개 URL'로 배포 — 한 번 올려두면 어디서나 당겨 쓴다
 # GitHub가 내 공개키를 서빙
-curl https://github.com/⟨msjang⟩.keys
+curl https://github.com/⟨myid⟩.keys
 # Launchpad도
-curl https://launchpad.net/~⟨msjang⟩/+sshkeys
+curl https://launchpad.net/~⟨myid⟩/+sshkeys
 
 # 3) 서버(bastion)에서 그 키들을 authorized_keys로 당기기 (네트워크 필요)
 # github.com/.keys 에서
-ssh-import-id gh:⟨msjang⟩
+ssh-import-id gh:⟨myid⟩
 # launchpad 에서
-ssh-import-id lp:⟨msjang⟩
+ssh-import-id lp:⟨myid⟩
 ```
+
+> 🔑 **공개키는 어디서 올리나** — 위 URL은 내가 먼저 공개키를 계정에 등록해 둬야 나온다. `~/.ssh/id_ed25519.pub`의 내용(한 줄)을 붙여 넣는다.
+
+> - GitHub: <https://github.com/settings/keys> → *New SSH key* ([GitHub 안내](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account))
+
+> - Launchpad: <https://launchpad.net/~/+editsshkeys> ([Launchpad 안내](https://ubuntu.com/docs/launchpad/user/YourAccount/CreatingAnSSHKeyPair/))
+
+>
+
+> 개인키(`id_ed25519`, `.pub` 없는 쪽)는 절대 올리지 않는다.
 
 👀 **보이는 것:** 공개키가 URL로 공개돼 있고, `ssh-import-id` 한 줄이면 서버에 등록됨. 이제 비번 없이 **키로** 로그인.
 

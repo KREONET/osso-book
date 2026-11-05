@@ -17,6 +17,7 @@
 | 특정 국가에서 오는 접속을 막고 싶다 | [⑤의 국가별 IP 장부](labs/lab-05.md) | [Part 2 §2.5](02-firewall.md) |
 | 오래된 방화벽에 규칙 넣기가 너무 번거롭다 | [⑤의 현장 활용](labs/lab-05.md) | [Part 2 §2.5 투명 브릿지](02-firewall.md) |
 | 서버가 밖으로 무엇을 보내는지 모른다 / 유출이 걱정된다 | [⑥ egress 화이트리스팅](labs/lab-06.md) | [Part 2](02-firewall.md) |
+| 나가는 걸 막았더니 뭔가 안 된다 / 잠깐 풀어야 한다 | [⑥의 로그·토글](labs/lab-06.md) | [Part 2 §2.6](02-firewall.md) |
 | 격리망 안의 VM을 밖에서 안전하게 쓰고 싶다 | [⑦ 방화벽·VPN](labs/lab-07.md) | [Part 3](03-network.md) |
 | ssh 키를 어떻게 배포하고, 접속 경로를 한 곳으로 모으나 | [⑧ 키 배포·bastion](labs/lab-08.md) | [Part 6](06-access.md) |
 | 오픈소스 서비스를 하나 도입해 보고 싶다 | [⑨ compose로 띄우고 써보기](labs/lab-09.md) | [Part 4](04-container.md) · [부록 C ADR](C-adr.md) |

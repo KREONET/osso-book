@@ -440,7 +440,7 @@ curl -I https://example.com
 
 **주의.**
 
-- Docker 데몬도 프록시를 보게 해야 `docker pull`이 됩니다(`/etc/systemd/system/docker.service.d/` 의 `HTTP_PROXY`).
+- Docker 데몬도 프록시를 보게 해야 `docker pull`이 됩니다. `/etc/systemd/system/docker.service.d/http-proxy.conf`에 `HTTP_PROXY`·`HTTPS_PROXY`를 넣는 **드롭인**입니다. apt의 `apt.conf.d/01proxy`와 함께, Part 1 §1.3의 "고치기보다 얹기"가 그대로 쓰입니다.
 - `ufw default deny outgoing`은 **호스트가 시작하는** 연결에만 적용됩니다. *컨테이너가 시작한* 연결은 FORWARD를 타므로 이 규칙이 닿지 않습니다. 이 구멍이 2.7의 두 번째 고도로 이어집니다.
 - 프록시가 `CONNECT`로 임의 포트를 터널링하지 않게 squid의 `Safe_ports`/`SSL_ports`도 좁힙니다.
 
@@ -449,11 +449,23 @@ curl -I https://example.com
 ```bash
 # Default: deny (outgoing)
 sudo ufw status verbose
-# TCP_DENIED / TCP_TUNNEL 로 허용·거부 관찰
+# (squid 서버에서) TCP_DENIED / TCP_TUNNEL 로 허용·거부 관찰
 sudo tail -f /var/log/squid/access.log
-# 직접 나가려던 시도
-sudo journalctl -k | grep "UFW BLOCK"
+# 직접 나가려던 시도 — 나가는 패킷은 'IN= OUT=장치' 로 찍힌다
+sudo journalctl -k | grep "UFW BLOCK" | grep 'IN= OUT='
 ```
+
+### 조인 채로 운영하기 — 로그, 토글, 자동 복귀
+
+egress 화이트리스팅이 실패하는 이유는 대개 기술이 아니라 **운영**입니다. 너무 조이면 "어, 이거 왜 안 되지?"가 오고, 원인을 모르면 누군가 불편하다며 통째로 풀어 버린 뒤 다시는 잠그지 않습니다. 그래서 세 가지 손놀림을 함께 갖춥니다.
+
+**1. 막힌 것은 로그로 찾는다.** `ufw logging low`를 켜 두면, 기본 차단에 걸린 나가는 패킷이 `[UFW BLOCK] IN= OUT=eth0 … DST=… DPT=…` 형태로 커널 로그에 남습니다. 목적지와 포트를 모으면 "무엇이 어디로 나가려 했나"가 보입니다. 단, ufw는 로그 폭주를 막으려고 **1분에 3건 정도만 표본으로** 남깁니다(실제 생성 규칙: `-m limit --limit 3/min --limit-burst 10 -j LOG`). 모든 시도를 세는 용도가 아니라 목적지를 찾는 용도입니다. 프록시가 거절한 도메인은 squid 쪽 `access.log`의 `TCP_DENIED`에서 찾습니다.
+
+**2. 열 때는 좁게, 잠깐.** 통째로 여는 `ufw default allow outgoing`보다, 로그에서 찾은 목적지 하나만 여는 `ufw allow out to ⟨IP⟩ port ⟨포트⟩`가 낫습니다. 끝나면 같은 규칙을 `ufw delete`로 지웁니다. 자주 필요한 곳이라면 토글할 일이 아니라 **squid allowlist에 올릴 일**입니다. 토글이 잦다는 것 자체가 allowlist를 고치라는 신호입니다. [실습⑥](labs/lab-06.md)에서는 `egress-open`·`egress-close`·`egress-state` 셸 함수로 이 손놀림을 짧게 만듭니다.
+
+**3. 잊어도 저절로 잠기게.** 가장 흔한 사고는 "잠깐 풀었다가 잠그는 걸 깜빡"입니다. 사람의 기억에 맡기지 않으려면 **열 때 닫을 시각을 함께 예약**하면 됩니다. systemd 타이머로 "열면 30분 뒤 자동으로 다시 잠김"을 만들 수 있고, 열 때 누가·언제·왜 열었는지 journal에 남기면 Part 7의 **기록** 통제지점과도 이어집니다. 이 책은 아이디어만 남겨 둡니다. 만들어 보고 싶다면 [실습⑥](labs/lab-06.md) 끝의 프롬프트로 AI와 함께 설계해 보세요.
+
+같은 생각이 망 경계에서는 [실습⑧](labs/lab-08.md)의 "평소엔 잠그고 필요할 때만 여는" 방화벽 토글로 다시 나옵니다(2.7의 세 번째 고도).
 
 **바깥 링크:** [Squid — Access Controls](https://wiki.squid-cache.org/SquidFaq/SquidAcl) · [Ubuntu — ufw](https://documentation.ubuntu.com/server/how-to/security/firewalls/) · [Docker 데몬 프록시 설정](https://docs.docker.com/engine/daemon/proxy/)
 
