@@ -52,9 +52,75 @@ ssh-keygen -lf ~/.ssh/id_ed25519.pub
 
 개인키에는 반드시 **패스프레이즈**를 겁니다. 노트북을 잃어버렸을 때 개인키 파일만으로 뚫리지 않게 하는 마지막 방어선입니다. 매번 치기 번거로우면 `ssh-agent`가 메모리에 잠깐 들고 있게 합니다.
 
+### 두 파일, 어디에 무엇을
+
+`ssh-keygen`은 파일 두 개를 만듭니다. 헷갈리기 쉬운 건 **어느 파일을 어디에 주느냐**입니다.
+
+| 파일 | 무엇 | 어디에 | 권한 |
+| --- | --- | --- | --- |
+| `~/.ssh/id_ed25519` | **개인키** (열쇠) | **내 PC에만.** `ssh -i`와 `IdentityFile`이 가리키는 것 | `600` |
+| `~/.ssh/id_ed25519.pub` | **공개키** (자물쇠) | 접속할 서버의 `~/.ssh/authorized_keys`에 한 줄로. GitHub·Launchpad 계정에 등록하는 것도 이것 | `644` |
+
+```mermaid
+flowchart LR
+  subgraph PC["내 PC"]
+    K["id_ed25519<br/>개인키"]
+    P["id_ed25519.pub<br/>공개키"]
+  end
+  subgraph SRV["서버"]
+    A["~/.ssh/authorized_keys<br/>공개키를 한 줄씩"]
+  end
+  P -- "내용을 한 줄로 복사" --> A
+  K -- "ssh -i / IdentityFile<br/>접속할 때 증명에 사용" --> SRV
+```
+
+**서버 쪽 — 공개키를 `authorized_keys`에.** 한 줄이 키 하나이고, 여러 사람·여러 PC의 키를 줄줄이 넣을 수 있습니다.
+
+```bash
+# 내 PC에서: 공개키를 서버의 authorized_keys에 덧붙여 준다 (권한까지 알아서)
+ssh-copy-id -i ~/.ssh/id_ed25519.pub ⟨user⟩@⟨server⟩
+# 손으로 할 때 (서버에서): 디렉터리 700, 파일 600이 아니면 sshd가 무시한다
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo '⟨공개키 한 줄⟩' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+권한이 너무 열려 있으면(남이 쓸 수 있으면) sshd는 그 파일을 믿지 않고 조용히 무시합니다(`StrictModes`). "키를 넣었는데 비번을 묻는다"의 흔한 원인입니다.
+
+**내 쪽 — `ssh -i`와 `IdentityFile`에는 개인키.** 접속할 때 "나는 이 자물쇠의 열쇠를 갖고 있다"를 증명하는 쪽이므로 **`.pub`이 없는 파일**을 가리킵니다.
+
+```bash
+# 한 번만
+ssh -i ~/.ssh/id_ed25519 ⟨user⟩@⟨server⟩
+```
+
+```bash
+# ~/.ssh/config — 매번 쓰려면
+Host ⟨server⟩
+  User ⟨user⟩
+  IdentityFile ~/.ssh/id_ed25519
+  # 위 키만 시도한다
+  IdentitiesOnly yes
+```
+
+키가 여러 개면 ssh는 가진 키를 차례로 다 내밀어 보다가 서버의 시도 횟수 제한에 걸려 `Too many authentication failures`로 끊깁니다. `IdentitiesOnly yes`는 "`IdentityFile`에 적은 키만 써라"는 뜻입니다.
+
+**`.pub`은 언제든 다시 만들 수 있습니다.** 공개키는 개인키에서 계산되는 값이라, 개인키만 있으면 됩니다(패스프레이즈를 걸었다면 물어봅니다).
+
+```bash
+ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
+```
+
+```text
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFhgGG0e3NdlEjxGqLAJps71j0QO8e4AeUvbgronRDRb me@example.org
+```
+
+반대는 안 됩니다. 공개키에서 개인키를 계산할 수 없다는 것이 이 방식의 전부입니다. 그래서 **지켜야 할 것은 개인키 하나**이고, 백업할 것도 개인키 하나입니다. 개인키를 잃으면 새로 만들고 공개키를 다시 등록하는 수밖에 없습니다.
+
 ### 바깥 링크
 
-- [ssh-keygen(1)](https://man.openbsd.org/ssh-keygen) — 옵션 전체
+- [ssh-keygen(1)](https://man.openbsd.org/ssh-keygen) — 옵션 전체 (`-y`: 개인키에서 공개키 출력)
+- [sshd(8) AUTHORIZED_KEYS FILE FORMAT](https://man.openbsd.org/sshd#AUTHORIZED_KEYS_FILE_FORMAT) — `authorized_keys` 한 줄의 형식과 옵션
 - [OpenSSH 릴리스 노트](https://www.openssh.com/releasenotes.html) — 지문 기본값 변경, 알고리즘 폐기 이력
 
 ---

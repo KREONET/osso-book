@@ -29,6 +29,40 @@ flowchart TB
 - 신뢰는 **전이**된다. 루트는 자기 서명이라 밖에서 심어 줘야 하므로 "키스토어에 있느냐"가 전부다. 공인 CA가 믿어지는 건 OS·브라우저가 그 루트를 기본 탑재해서다.
 - 서버는 서버 인증서+중간 CA를 함께 보낸다. 중간 CA를 빼먹으면 "어떤 클라이언트만 실패"하는 간헐 오류가 난다.
 
+### 뿌리는 누가 정하나 — 루트 프로그램과 설치 미디어
+
+내 키스토어의 루트 인증서들은 내가 고른 게 아닙니다. **OS 설치 미디어에 들어 있다가** 설치할 때 깔리고, 이후 **OS 업데이트로 갱신**됩니다. 어떤 CA를 넣고 뺄지는 OS·브라우저 회사가 운영하는 **루트 프로그램**이 정합니다. CA는 정기 감사를 통과하고 규칙을 지켜야 목록에 들어가며, 사고를 치면 빠집니다(2011년 해킹당한 네덜란드 CA DigiNotar는 모든 목록에서 제거되고 파산했습니다).
+
+| 루트 프로그램 | 운영 | 쓰는 곳 |
+| --- | --- | --- |
+| [Mozilla CA Certificate Program](https://wiki.mozilla.org/CA) | Mozilla 재단 | Firefox, 그리고 **대부분의 리눅스 배포판** |
+| [Microsoft Trusted Root Program](https://learn.microsoft.com/en-us/security/trusted-root/program-requirements) | 마이크로소프트 | Windows (Windows Update로 자동 갱신) |
+| [Apple Root Certificate Program](https://www.apple.com/certificateauthority/ca_program.html) | 애플 | macOS · iOS (OS 업데이트로 갱신) |
+| [Chrome Root Program](https://www.chromium.org/Home/chromium-security/root-ca-policy/) | 구글 | Chrome (자체 목록) |
+
+리눅스는 자체 프로그램 대신 Mozilla의 목록을 가져다 씁니다. 직접 확인할 수 있습니다.
+
+```bash
+# Debian·Ubuntu — ca-certificates 패키지의 출처 디렉터리 이름이 mozilla
+ls /usr/share/ca-certificates/
+ls /usr/share/ca-certificates/mozilla | wc -l
+# RHEL·Rocky — 패키지 설명
+rpm -qi ca-certificates | grep Summary
+```
+
+```text
+mozilla
+120
+Summary     : The Mozilla CA root certificate bundle
+```
+
+(Ubuntu 24.04·Rocky 9 컨테이너, 2026-11 기준. 개수는 업데이트마다 달라집니다.)
+
+**그래서 오래 잠들었던 컴퓨터는 웹을 못 믿습니다.** 10년 된 맥을 백업에서 복원해 오랜만에 켜면, 많은 웹사이트가 "신뢰할 수 없음"으로 안 열립니다. 키스토어가 **10년 전 설치 미디어 시점에 멈춰 있기** 때문입니다. 그사이 새로 생긴 루트는 없고, 그때 있던 루트는 만료됐습니다. 실제 예가 Let's Encrypt입니다. 그 루트(ISRG Root X1)를 macOS가 기본으로 믿는 건 10.12.1(2016) 이후이고, 그보다 오래된 맥은 다른 CA가 대신 서명해 주던 교차 서명(DST Root CA X3)에 기대고 있었는데 그 루트가 2021년 9월 30일에 만료됐습니다. 그 뒤로 오래된 맥에서는 Let's Encrypt 인증서를 쓰는 수많은 사이트가 경고를 띄웁니다.
+
+- 고치는 순서: **① 시계부터 확인**(배터리가 방전돼 날짜가 틀리면 모든 인증서가 "기간 아님"이 됩니다) → **② OS 업데이트**(키스토어도 같이 갱신) → ③ 더는 업데이트가 안 되는 OS라면 필요한 루트를 공식 배포처에서 받아 직접 심거나([5.4](#54-키스토어에-뿌리-심기--윈도ios안드)), 자체 루트 목록을 들고 다니는 최신 Firefox를 씁니다.
+- 서버도 같습니다. 몇 년 전에 구운 골든 이미지나 업데이트를 멈춘 서버는 `ca-certificates`가 낡아, 어느 날 외부 API·저장소 접속이 인증서 오류로 실패합니다. **OS 업데이트는 보안 패치일 뿐 아니라 "누구를 믿을지"의 갱신**이기도 합니다([Part 1](01-image.md)의 이미지 패치 때 같이 올려 두세요).
+
 ### 확인 커맨드
 
 ```bash
@@ -48,6 +82,7 @@ ls /etc/ssl/certs | head
 ### 바깥 링크
 
 - [RFC 5280 — X.509 PKI 인증서 프로파일](https://www.rfc-editor.org/rfc/rfc5280)
+- [Let's Encrypt 인증서 호환성](https://letsencrypt.org/docs/certificate-compatibility/) — 플랫폼별로 언제부터 그 루트를 믿는지
 - [RFC 8446 — TLS 1.3](https://www.rfc-editor.org/rfc/rfc8446) (핸드셰이크 내부는 여기서)
 
 ---

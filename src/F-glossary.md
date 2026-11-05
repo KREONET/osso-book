@@ -10,9 +10,11 @@
 | bastion | 내부망 진입 전용 관문 서버. 외부 접속을 여기 한 곳으로 모은다. |
 | CA | 인증기관. 서버·클라이언트 인증서에 서명해 신뢰를 보증한다. |
 | cgroup | 프로세스 묶음별로 CPU·메모리·I/O·프로세스 수를 제한하고 재는 리눅스 기능. 컨테이너의 "쿼터" 쪽. → [Part 4 §4.0](04-container.md) |
+| 루트 프로그램 | OS·브라우저 회사가 어떤 루트 CA를 기본으로 믿을지 정하고 관리하는 제도(Mozilla·Microsoft·Apple·Chrome). 목록은 설치 미디어와 OS 업데이트로 배포된다. → [Part 5 §5.1](05-trust.md) |
 | CCE | Common Configuration Enumeration. 보안 설정 항목의 표준 식별자. |
 | CVE | 공개된 취약점의 표준 식별 번호(예: CVE-2024-xxxx). |
 | dotfile (점 파일) | 이름이 `.`으로 시작하는 숨김 파일(`ls -a`로 보임). `~/.bashrc`·`~/.ssh/config` 같은 사용자 설정. 팀이 공유하면 온보딩과 편차 줄이기에 효과적이다. → [Part 1 §1.3](01-image.md) |
+| authorized_keys | 서버의 `~/.ssh/authorized_keys`. 이 계정에 들어올 수 있는 **공개키**를 한 줄에 하나씩 적는 파일(디렉터리 700·파일 600). → [Part 6 §6.1](06-access.md) |
 | DNAT | 목적지 주소 변환. 외부 포트를 내부 서비스로 포워딩할 때 쓴다. |
 | DNS-01 | ACME 검증 방식. DNS TXT 레코드로 소유를 증명한다(와일드카드 가능). |
 | DOCKER-USER | Docker가 FORWARD 앞에 두는 사용자 정의 iptables 체인. 컨테이너 방화벽을 여기서 건다. |
