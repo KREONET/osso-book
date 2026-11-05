@@ -38,6 +38,7 @@
 | SNAT | 출발지 주소 변환. 내부 대역이 외부로 나갈 때(masquerade) 쓴다. |
 | SSPL | MongoDB 등이 쓴 Server Side Public License. 서비스 제공 시 소스 공개 의무, OSI 비승인. |
 | sysprep | 이미지 복제 전 머신 정체성(machine-id·호스트키·로그)을 지우는 작업. |
+| unix socket (유닉스 도메인 소켓) | `IP:포트` 대신 파일 경로(`/var/run/docker.sock` 등)로 여는 소켓. 같은 컴퓨터 안 프로그램끼리의 대화(IPC·RPC)는 대부분 이것이며, 파일 권한이 곧 접근 통제다. → [Part 4 §4.0](04-container.md) |
 | V2P | Virtual to Physical. 가상 이미지를 물리 서버로 복원·이식하는 것. |
 
 관련: [부록 D 치트시트](D-cheatsheet.md)

@@ -53,7 +53,86 @@ docker run --rm alpine ip addr
 
 호스트에 인터페이스가 여럿 있어도 컨테이너에게는 `lo`와 `eth0` 둘뿐입니다. `eth0@if61`의 `@if61`은 "호스트 쪽 61번 인터페이스와 짝인 가상 케이블(veth)"이라는 뜻입니다.
 
-그리고 리눅스 커널에서 네트워크는 **큰 덩어리**입니다. 2026년 11월 기준 커널 소스(`.c`·`.h`)를 크기로 재 보면, 프로토콜 스택(`net/`)만 34 MB로 프로세스·스케줄러(`kernel/`, 16 MB)와 메모리 관리(`mm/`, 6 MB)를 합친 것보다 큽니다. 네트워크 카드 드라이버(`drivers/net/`, 153 MB)까지 더하면 전체의 약 13%, 자동 생성된 GPU 레지스터 헤더(전체의 43%)를 빼고 보면 약 5분의 1입니다. 그만큼 기능도, 규칙도, 함정도 많습니다. 컨테이너가 이 스택을 한 벌씩 따로 갖고, 그 사이를 브리지·NAT·방화벽 규칙으로 잇다 보니 [실습③](labs/lab-03.md)의 "ufw가 왜 뚫리지", [⑨′](labs/lab-09p.md)의 egress, [4.5](#45-이미지-빌드--dockerfile-비루트non-root-멀티스테이지-대역-겹침)의 대역 겹침 같은 문제가 생깁니다.
+그리고 리눅스 커널에서 네트워크는 **큰 덩어리**입니다. 커널 소스(Linux 7.4-rc1, 2026-11-03)의 C·헤더·어셈블리·Rust 코드 약 3,880만 줄을 디렉터리별로 세어 보면 이렇습니다.
+
+| 디렉터리 | 무엇 | 줄 수 | 비율 |
+| --- | --- | ---: | ---: |
+| `drivers/` | **장치 드라이버** 전체 | 2,677만 | **69.0%** |
+| ├ `drivers/net/` | 네트워크 카드 드라이버 (유선 268만·무선 205만 포함) | 537만 | 13.8% |
+| ├ `drivers/gpu/` | 그래픽 드라이버 | 872만 | 22.5% |
+| │ └ 그중 `amd/include/asic_reg/` | AMD GPU 레지스터 정의 (**자동 생성된 헤더**) | 524만 | 13.5% |
+| └ 나머지 | 미디어·SCSI·USB·클럭 등 | 1,268만 | 32.7% |
+| `arch/` | CPU 아키텍처별 코드 (x86, ARM, RISC-V…) | 254만 | 6.5% |
+| `sound/` | 사운드 | 171만 | 4.4% |
+| `fs/` | 파일시스템 (ext4, XFS, NFS…) | 167만 | 4.3% |
+| `net/` | **네트워크 프로토콜 스택** (TCP/IP, netfilter, 브리지…) | 130만 | 3.4% |
+| `kernel/` | 프로세스·스케줄러·시그널 | 59만 | 1.5% |
+| `mm/` | 메모리 관리 | 23만 | 0.6% |
+| `security/` | SELinux·AppArmor 등 | 13만 | 0.3% |
+| 그 밖 | `include/`, `tools/`, `lib/`, `crypto/`, `rust/` … | 387만 | 10.0% |
+
+읽는 법은 셋입니다.
+
+- **커널의 3분의 2 이상은 드라이버**입니다. 커널의 "본체"라 할 만한 `kernel/`(프로세스·스케줄러)과 `mm/`(메모리)은 합쳐도 2%가 안 됩니다. 커널이 하는 일의 대부분은 세상의 온갖 하드웨어와 말을 맞추는 일입니다.
+- **네트워크를 합치면 약 18%**입니다. 프로토콜 스택(`net/`) + 네트워크 카드 드라이버(`drivers/net/`) + 네트워크 헤더(`include/net/`)가 680만 줄. 사람이 쓴 코드가 아닌 자동 생성 헤더(AMD GPU 레지스터 524만 줄)를 빼고 보면 **약 20%, 다섯 줄에 한 줄**이 네트워크입니다.
+- 그 헤더를 빼면 **드라이버 중 가장 큰 가족은 네트워크 카드**입니다(537만 줄, GPU는 349만 줄). 프로토콜 스택만 봐도 프로세스·스케줄러·메모리 관리를 합친 것보다 큽니다.
+
+그만큼 기능도, 규칙도, 함정도 많습니다. 컨테이너가 이 스택을 한 벌씩 따로 갖고, 그 사이를 브리지·NAT·방화벽 규칙으로 잇다 보니 [실습③](labs/lab-03.md)의 "ufw가 왜 뚫리지", [⑨′](labs/lab-09p.md)의 egress, [4.5](#45-이미지-빌드--dockerfile-비루트non-root-멀티스테이지-대역-겹침)의 대역 겹침 같은 문제가 생깁니다.
+
+```bash
+# 직접 세어 보기 — 최신 소스를 얕게 받아서 (약 40초, 디스크 2 GB)
+git clone --depth 1 https://github.com/torvalds/linux.git && cd linux
+# 디렉터리별 C·헤더 줄 수
+for d in drivers drivers/net net fs kernel mm; do
+  printf '%-12s ' "$d"
+  find "$d" -name '*.[ch]' -print0 | xargs -0 cat | wc -l
+done
+```
+
+### 같은 컴퓨터 안의 대화 — 파일로 여는 소켓 (unix socket)
+
+소켓이라고 하면 보통 `IP:포트`(1~65535)를 떠올립니다. 그런데 리눅스 안에서 프로그램끼리 나누는 대화는 대부분 **포트가 아니라 파일 경로로 여는 소켓**, 곧 **유닉스 도메인 소켓**으로 이루어집니다. 네트워크 스택(TCP/IP)을 거치지 않고 커널 안에서 바로 이어지므로 빠르고, 파일이므로 **파일 권한으로 누가 붙을 수 있는지 정합니다.**
+
+```bash
+# 이 컴퓨터의 소켓 수 — 유닉스 vs TCP vs UDP
+echo "unix: $(ss -xa | tail -n +2 | wc -l)  tcp: $(ss -ta | tail -n +2 | wc -l)  udp: $(ss -ua | tail -n +2 | wc -l)"
+# 듣고 있는 유닉스 소켓과 그 주인 프로세스
+sudo ss -xlp | head -20
+```
+
+이 책을 쓴 리눅스 PC에서는 `unix: 1009  tcp: 99  udp: 8`이었습니다. 열에 아홉이 파일 소켓입니다. 익숙한 것들이 다 여기 있습니다.
+
+| 소켓 파일 | 누가 쓰나 |
+| --- | --- |
+| `/run/systemd/…`, `/run/systemd/journal/…` | `systemctl`이 systemd에게, 프로그램이 journald에게 로그를 보낼 때 |
+| `/dev/log` | 전통적인 syslog 입구 (요즘은 journald로 이어지는 링크) |
+| `/run/dbus/system_bus_socket` | D-Bus — 데스크톱·시스템 서비스끼리의 메시지 버스(RPC) |
+| `/var/run/docker.sock` | `docker` 명령이 Docker 데몬에게 |
+| `/run/containerd/containerd.sock` | Docker 데몬이 containerd에게 |
+| `/var/run/postgresql/.s.PGSQL.5432` | `psql`이 같은 서버의 PostgreSQL에게 (포트 번호가 이름에 남아 있다) |
+| `$SSH_AUTH_SOCK` | `ssh`가 ssh-agent에게 키 서명을 부탁할 때 |
+
+`docker` 명령도 사실 이 파일 소켓 위에서 **HTTP API**를 부르는 클라이언트일 뿐입니다. `curl`로 똑같이 부를 수 있습니다.
+
+```bash
+# docker version 과 같은 질문을 curl로
+curl -s --unix-socket /var/run/docker.sock http://localhost/version
+# docker ps 와 같은 질문
+curl -s --unix-socket /var/run/docker.sock http://localhost/containers/json
+ls -l /var/run/docker.sock
+```
+
+```text
+srw-rw---- 1 root docker 0 … /var/run/docker.sock
+```
+
+맨 앞의 `s`가 소켓 파일이라는 표시이고, `root:docker`·`rw-rw----`가 곧 **"누가 Docker를 부릴 수 있나"의 전부**입니다. 그래서:
+
+- `docker` 그룹에 넣는 것 = 이 파일에 쓸 권한을 주는 것 = 사실상 root를 주는 것 (4.3).
+- 컨테이너에 `-v /var/run/docker.sock:/var/run/docker.sock`을 붙이면 그 컨테이너가 호스트의 Docker 전체를 부린다. net namespace로 네트워크를 갈라 놓아도 **파일은 마운트로 건너간다.** 관리 도구가 이걸 요구하면 정말 필요한지 따져 본다.
+- 반대로 이 성질은 장점이기도 하다. 같은 서버 안의 DB는 TCP 포트를 열지 않고 소켓 파일로만 붙게 하면, 밖에서는 아예 닿을 수 없다.
+
+방화벽 규칙도 비슷한 길로 커널에 들어갑니다. `ip`나 `nft` 명령은 커널과 **netlink 소켓**으로 대화합니다. 파일도 포트도 아닌, 사용자 프로그램과 커널 사이 전용 소켓입니다. 리눅스에서 "대화"는 거의 언제나 소켓이고, 그중 대부분은 포트 번호가 없습니다.
 
 ### 프로세스는 복제로 태어난다 — fork, exec, wait
 
