@@ -133,7 +133,7 @@ sudo ufw default deny incoming
 sudo ufw default deny outgoing
 # 필요한 나가는 길만 허용
 sudo ufw allow out 53
-sudo ufw allow from ⟨10.0.0.0/24⟩ to any port 22
+sudo ufw allow from ⟨192.0.2.0/24⟩ to any port 22
 sudo ufw enable && sudo ufw status verbose
 ```
 
@@ -161,11 +161,11 @@ ip route
 ip -br addr
 # NetworkManager 연결 목록
 nmcli con show
-nmcli con mod ⟨con⟩ ipv4.addresses ⟨10.0.0.5/24⟩ ipv4.method manual
+nmcli con mod ⟨con⟩ ipv4.addresses ⟨192.0.2.5/24⟩ ipv4.method manual
 # WireGuard 상태
 sudo wg show
 # VPN 후 격리 LAN 도달 확인
-ping ⟨10.10.1.5⟩
+ping ⟨192.0.2.5⟩
 # MTU 9000 확인(DF 비트, 8972+28)
 ping -M do -s 8972 ⟨target⟩
 ```

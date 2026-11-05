@@ -2,7 +2,7 @@
 
 > 담당 랩 [실습⑦](labs/lab-07.md) · [실습⑧](labs/lab-08.md).
 
-이 장의 한 줄: **내부망은 섬으로 만들고, 섬으로 들어가는 다리와 섬에서 나가는 길을 각각 한 곳에서 통제한다.** 아래 여섯 절은 그 한 줄을 층층이 푼 것입니다. 예시 주소는 모두 문서용(`203.0.113.0/24`)과 사설 대역(`10.10.1.0/24`)입니다.
+이 장의 한 줄: **내부망은 섬으로 만들고, 섬으로 들어가는 다리와 섬에서 나가는 길을 각각 한 곳에서 통제한다.** 아래 여섯 절은 그 한 줄을 층층이 푼 것입니다. 예시 주소는 모두 문서용 대역입니다. 바깥은 `203.0.113.0/24`, 안쪽 섬은 `192.0.2.0/24`, 인터넷 저편은 `198.51.100.0/24`입니다([들어가며](00-intro.md#이-책의-주소-표기--rfc-5737)).
 
 ## 3.1 격리망 설계 — vmbr0/vmbr1, 섬과 다리
 
@@ -67,23 +67,23 @@ ip -br link show type bridge
 
 > **default route는 정확히 하나만. 나머지 대역은 "저 대역은 저 문으로"라고 명시한다.**
 
-bastion과 방화벽 VM이 바로 이 구조입니다. 바깥 쪽(`vmbr0`)이 default를 갖고, 내부 대역(`10.10.1.0/24`)은 안쪽 NIC로 명시 라우트를 둡니다.
+bastion과 방화벽 VM이 바로 이 구조입니다. 바깥 쪽(`vmbr0`)이 default를 갖고, 내부 대역(`192.0.2.0/24`)은 안쪽 NIC로 명시 라우트를 둡니다.
 
 ```
 ens18 (vmbr0)  203.0.113.10/24   gw 203.0.113.1   <- default는 여기 하나
-ens19 (vmbr1)  10.10.1.2/24      (gw 없음)         <- 10.10.1.0/24는 connected 경로로 충분
+ens19 (vmbr1)  192.0.2.2/24      (gw 없음)         <- 192.0.2.0/24는 connected 경로로 충분
 ```
 
-내부 대역이 NIC에 직접 붙어 있으면 connected 경로가 자동으로 생깁니다. 그 너머의 다른 사설 대역(예: `10.20.0.0/16`)이 내부 라우터 뒤에 있다면 그때 명시 라우트를 추가합니다.
+내부 대역이 NIC에 직접 붙어 있으면 connected 경로가 자동으로 생깁니다. 그 너머의 다른 기관 내부 대역(예: 사설 대역 `10.20.0.0/16`)이 내부 라우터 뒤에 있다면 그때 명시 라우트를 추가합니다.
 
 **세 가지 도구 — 같은 의도, 다른 문법.**
 
 ```bash
 # NetworkManager (Rocky/RHEL 계열)
-nmcli con mod ens19 ipv4.method manual ipv4.addresses 10.10.1.2/24
+nmcli con mod ens19 ipv4.method manual ipv4.addresses 192.0.2.2/24
 # 이 NIC는 default를 갖지 않는다
 nmcli con mod ens19 ipv4.never-default yes
-nmcli con mod ens19 +ipv4.routes "10.20.0.0/16 10.10.1.254"
+nmcli con mod ens19 +ipv4.routes "10.20.0.0/16 192.0.2.254"
 nmcli con up ens19
 ```
 
@@ -98,17 +98,17 @@ network:
         - to: default
           via: 203.0.113.1
     ens19:
-      addresses: [10.10.1.2/24]
+      addresses: [192.0.2.2/24]
       routes:
         - to: 10.20.0.0/16
-          via: 10.10.1.254
+          via: 192.0.2.254
 ```
 
 ```bash
 # 구식 ifcfg (RHEL 계열 레거시) — /etc/sysconfig/network-scripts/
 # ifcfg-ens18 : GATEWAY=203.0.113.1
 # ifcfg-ens19 : (GATEWAY 지정 안 함)
-# route-ens19 : 10.20.0.0/16 via 10.10.1.254
+# route-ens19 : 10.20.0.0/16 via 192.0.2.254
 ```
 
 **확인.**
@@ -117,7 +117,7 @@ network:
 # default 줄이 정확히 한 개인가
 ip route
 # "이 목적지는 어느 NIC·게이트웨이로?" 커널의 실제 답
-ip route get 10.10.1.5
+ip route get 192.0.2.5
 # 바깥 주소는 default 쪽으로 나가는가
 ip route get 198.51.100.7
 nmcli -f ipv4.routes,ipv4.never-default con show ens19
@@ -561,7 +561,7 @@ traceroute to 192.168.20.50 (192.168.20.50), 30 hops max, 60 byte packets
 
 ```bash
 # 격리 LAN VM에서 (방화벽이 게이트웨이)
-# default via 10.10.1.1  <- 방화벽 LAN 주소
+# default via 192.0.2.1  <- 방화벽 LAN 주소
 ip route
 # 첫 홉이 방화벽인가
 traceroute -n 198.51.100.7
@@ -608,7 +608,7 @@ Address    = 10.99.0.2/32
 PublicKey  = ⟨server-public-key⟩
 Endpoint   = 203.0.113.10:⟨커스텀포트⟩
 # 섬 대역만 터널로 (split tunnel)
-AllowedIPs = 10.10.1.0/24
+AllowedIPs = 192.0.2.0/24
 # NAT 뒤라면
 PersistentKeepalive = 25
 ```
@@ -621,8 +621,8 @@ PersistentKeepalive = 25
 # latest handshake: N seconds ago  <- 살아 있다는 증거
 sudo wg show
 # dev wg0 로 나가는가
-ip route get 10.10.1.5
-sudo wg-quick up wg0 && ping -c3 10.10.1.5
+ip route get 192.0.2.5
+sudo wg-quick up wg0 && ping -c3 192.0.2.5
 
 # "Initialization Sequence Completed"
 sudo openvpn --config client.ovpn
@@ -663,7 +663,7 @@ Host bastion
   HostName 203.0.113.10
   User jump
 Host lanvm
-  HostName 10.10.1.5
+  HostName 192.0.2.5
   ProxyJump bastion
 ```
 
@@ -680,11 +680,11 @@ curl -m 5 -sI https://example.com
 
 # ingress: 내 PC에서
 # bastion 없이 직접 시도하면 경로 없음으로 실패해야 한다
-ssh user@10.10.1.5
+ssh user@192.0.2.5
 # 디버그 출력에 bastion 경유가 보인다
 ssh -v lanvm hostname
 # config 없이 한 줄로
-ssh -J jump@203.0.113.10 user@10.10.1.5 hostname
+ssh -J jump@203.0.113.10 user@192.0.2.5 hostname
 ```
 
 bastion 자체가 단일 장애·단일 표적이 된다는 점은 비용입니다. 그래서 **키만 허용, 비밀번호 로그인 끔, 접속 로그 보존**이 짝으로 따라옵니다. 키·접근 정책은 [Part 6](06-access.md)에서 이어집니다.

@@ -225,7 +225,7 @@ dnf config-manager --set-enabled crb
 
 ## K.7 perfSONAR 장비 (납품용)
 
-> ⚠️ 이 절은 perfSONAR Toolkit 4.1(CentOS 7 기반 ISO) 시절의 절차와 화면입니다. CentOS 7은 수명이 끝났고, perfSONAR 5.x부터는 전용 ISO 대신 지원되는 배포판(EL9 계열·Ubuntu·Debian) 위에 패키지로 설치하는 방식으로 바뀌었습니다. 새로 설치한다면 [perfSONAR 설치 문서](https://docs.perfsonar.net/install_getting.html)를 먼저 확인하세요. 여기 남긴 것은 **이미 그 방식으로 납품된 장비를 인수·점검할 때** 무엇을 봐야 하는지 알기 위해서입니다.
+> ⚠️ 이 절은 perfSONAR Toolkit 4.1(CentOS 7 기반 ISO) 시절의 절차와 화면입니다. CentOS 7은 수명이 끝났고, perfSONAR 5.0(2023년)부터는 Toolkit ISO를 더 내지 않고, 지원되는 배포판(EL 계열·Ubuntu·Debian) 위에 `dnf`/`apt` 패키지 묶음(bundle)으로 설치하는 방식으로 바뀌었습니다(이 글을 쓰는 시점의 최신은 5.2.x). 새로 설치한다면 [perfSONAR 설치 문서](https://docs.perfsonar.net/install_getting.html)를 먼저 확인하세요. 여기 남긴 것은 **이미 그 방식으로 납품된 장비를 인수·점검할 때** 무엇을 봐야 하는지 알기 위해서입니다.
 
 perfSONAR는 iperf 같은 네트워크 성능 측정 도구를 묶어 배포하는 도구 모음입니다. 왜 이 책의 범위 밖인지는 [§3.6](03-network.md)에 적었습니다.
 

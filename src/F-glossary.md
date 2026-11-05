@@ -43,6 +43,9 @@
 | X.509 | 인증서의 국제 표준 형식. HTTPS 서버 인증서, mTLS 클라이언트 인증서, 공동(옛 공인)인증서가 모두 이 형식이다. → [Part 5 §5.1](05-trust.md) |
 | PATH | 명령 이름을 찾을 디렉터리 목록인 환경변수. 왼쪽부터 찾으며 리눅스는 현재 디렉터리를 뒤지지 않는다. → [Part 4 §4.0](04-container.md) |
 | PUEL | VirtualBox Extension Pack의 라이선스. 개인·평가용만 무료, 기관은 유료. → [부록 B](B-licenses.md) |
+| SADP | Secure Application Deployment Profile. 앱을 하나하나 검사하는 대신 앱이 올라가는 자리를 입구·출구·빌드·기록의 네 지점에서 통제하자는 지침. 저자가 2026년 제안(<https://msjang.github.io/ostday26-sadp/>). → [Part 7 §7.5](07-ai-governance.md) |
+| RFC 5737 | 문서·예시 전용 IPv4 대역 셋(`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`). 인터넷에서 라우팅되지 않는다. 이 책의 예시 주소. → [들어가며](00-intro.md) |
+| 위임 사다리 | AI에게 맡기는 정도를 조언→조사→승인 후 실행→위임의 네 칸으로 나눈 것. 칸마다 계정·권한·사람의 확인 방법이 다르다. → [Part 7 §7.1](07-ai-governance.md) |
 | SNAT | 출발지 주소 변환. 내부 대역이 외부로 나갈 때(masquerade) 쓴다. |
 | SSPL | MongoDB 등이 쓴 Server Side Public License. 서비스 제공 시 소스 공개 의무, OSI 비승인. |
 | sysprep | 이미지 복제 전 머신 정체성(machine-id·호스트키·로그)을 지우는 작업. |

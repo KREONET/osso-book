@@ -59,8 +59,8 @@ echo $SHELL
 | Tilix | | O | |
 | Terminal.app (기본) | | | O |
 | iTerm2 | | | O |
-| Hyper | O | O | O |
-| Kitty | O | O | O |
+| Hyper (개발 중단 — GitHub 저장소 보관(archived), 마지막 릴리스 2023년) | O | O | O |
+| Kitty | | O | O |
 | Alacritty | O | O | O |
 | Tabby (옛 이름 Terminus) | O | O | O |
 
@@ -127,7 +127,7 @@ chmod 600 ~/.ssh/id_ed25519
 | PuTTY | MIT | O | O | O | | |
 | MobaXterm | 상용(Home Edition 무료) | | O | | | |
 | mRemoteNG | GPL v2 | | O | | | SSH, 윈도우 RDP, VNC, Telnet, PowerShell을 한 창에서 |
-| SecureCRT | 유료 | | O | | | |
+| SecureCRT | 상용(유료) | O | O | O | | |
 | Xshell | 개인 무료·기업 유료 | | O | | | |
 
 라이선스 칸이 왜 중요한지는 [부록 B](B-licenses.md)와 [§1.8](01-image.md)의 Anaconda 이야기와 같습니다. "개인 무료"인 도구를 기관 PC에 깔면 그 자체로 라이선스 위반이 될 수 있습니다.
@@ -140,7 +140,7 @@ brew install --cask termius
 # Termius — 리눅스
 snap install termius-app
 # PortX — 맥
-brew install portx
+brew install --cask portx
 # PortX — 리눅스
 snap install portx --classic
 ```
@@ -179,7 +179,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 
 ⚠️ 인터넷에서 받은 스크립트를 바로 셸에 넘기는 형태입니다. 공식 저장소 주소인지 한 번 더 보고, 불안하면 먼저 파일로 받아(`curl -fsSL ⟨URL⟩ -o install.sh`) 읽어 본 뒤 실행합니다.
 
-**맥에서 나 혼자 쓴다면 powerlevel10k.** [powerlevel10k](https://github.com/romkatv/powerlevel10k)는 zsh용 테마로, 매우 빠르고 정보가 풍부합니다.
+**맥에서 나 혼자 쓴다면 powerlevel10k.** [powerlevel10k](https://github.com/romkatv/powerlevel10k)는 zsh용 테마로, 매우 빠르고 정보가 풍부합니다. 다만 저장소 첫머리에 밝혀 둔 대로 지금은 **지원이 매우 제한된** 상태입니다(새 기능 없음, 대부분의 버그는 고치지 않음, 도움 요청에 답하지 않음). 지금 그대로 잘 동작하지만, 문제가 생기면 스스로 해결하거나 다른 테마로 옮겨야 한다는 뜻입니다.
 
 ```bash
 # 내 oh-my-zsh의 custom 테마 폴더에 받는다

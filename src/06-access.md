@@ -216,7 +216,7 @@ PermitRootLogin no
 
 ```bash
 # /etc/ssh/sshd_config.d/02-match.conf
-Match Address 10.10.1.0/24
+Match Address 192.0.2.0/24
     PasswordAuthentication no
 # 점프 전용 계정: ProxyJump는 bastion의 TCP 포워딩으로 동작한다
 Match User jump

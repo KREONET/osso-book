@@ -9,7 +9,7 @@
 # 나가는 걸 다 막는다
 sudo ufw default deny outgoing
 # squid만 예외
-sudo ufw allow out to ⟨10.10.0.9⟩ port 3128
+sudo ufw allow out to ⟨203.0.113.9⟩ port 3128
 # DNS
 sudo ufw allow out 53
 # 막힌 시도를 로그로 남긴다
@@ -19,13 +19,13 @@ sudo ufw logging low
 ⌨️ **2단계 — apt와 Docker가 프록시를 보게 한다** — 둘 다 ①에서 배운 **드롭인 얹기**다.
 ```bash
 # apt: apt.conf.d 에 조각 하나
-echo 'Acquire::http::Proxy "http://⟨10.10.0.9⟩:3128";' | sudo tee /etc/apt/apt.conf.d/01proxy
+echo 'Acquire::http::Proxy "http://⟨203.0.113.9⟩:3128";' | sudo tee /etc/apt/apt.conf.d/01proxy
 # Docker 데몬: 서비스 드롭인 디렉터리에 조각 하나
 sudo mkdir -p /etc/systemd/system/docker.service.d
 sudo tee /etc/systemd/system/docker.service.d/http-proxy.conf <<'EOF'
 [Service]
-Environment="HTTP_PROXY=http://⟨10.10.0.9⟩:3128"
-Environment="HTTPS_PROXY=http://⟨10.10.0.9⟩:3128"
+Environment="HTTP_PROXY=http://⟨203.0.113.9⟩:3128"
+Environment="HTTPS_PROXY=http://⟨203.0.113.9⟩:3128"
 Environment="NO_PROXY=localhost,127.0.0.1"
 EOF
 sudo systemctl daemon-reload
@@ -40,7 +40,7 @@ docker pull ghcr.io/⟨org/img⟩
 # allowlist 밖의 사이트 — 직접
 curl -I -m 5 https://example.com
 # 같은 사이트 — 이번엔 프록시를 거쳐서
-curl -I -m 5 -x http://⟨10.10.0.9⟩:3128 https://example.com
+curl -I -m 5 -x http://⟨203.0.113.9⟩:3128 https://example.com
 ```
 
 ⌨️ **4단계 — 무엇이 막혔나, 로그로 찾는다**

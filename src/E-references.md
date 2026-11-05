@@ -21,6 +21,12 @@
 * 김창준, 『야생 학습 — 불확실성의 시대, 학습은 왜 더 중요해졌는가』, 2026년 11월 2일. <https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=404995378>
   — 이 책의 [지도](map.md)·갈림길 구성(지도·옵션·가설·액관해)과 [AI로 내 교재 만들기](ai/index.md)의 원칙이 여기서 왔습니다.
 
+## 이 책이 기대는 개념의 원전
+
+* 장민석, "AI 시대, 빠르고 안전한 앱 프로토타입 — 섀도우 IT를 양지로 올리는 법", 출연연 오픈소스 테크데이 2026, 2026-10-07. <https://msjang.github.io/ostday26-sadp/> (저장소 <https://github.com/msjang/ostday26-sadp>, CC BY-NC-ND 4.0)
+  — **SADP**(Secure Application Deployment Profile) 4통제지점과 정책 제안 아홉 가지의 원문. [Part 7 §7.5](07-ai-governance.md).
+* Trusted CI, "The Trusted CI Framework". <https://www.trustedci.org/framework/core> — 요건만 정하고 구현은 묻지 않는 보안 프레임워크. SADP가 "프로파일"을 택한 근거.
+
 ## 혼자 더 공부할 때 — 기술 서적·강의 구독
 
 * **O'Reilly Learning** <https://learning.oreilly.com> — 표지에 동물·곤충·식물 그림이 있는 그 출판사의 책·동영상 강의·실습 환경을 묶은 구독 서비스입니다(옛 이름 Safari Books Online). 개인 구독은 비싼 편이니, 소속 기관이나 학회 회원 혜택으로 쓸 수 있는지 먼저 확인합니다.
@@ -43,6 +49,7 @@
 | Docker와 방화벽 | <https://docs.docker.com/engine/network/packet-filtering-firewalls/> |
 | RFC 8555 (ACME) | <https://www.rfc-editor.org/rfc/rfc8555> |
 | RFC 5280 (X.509) | <https://www.rfc-editor.org/rfc/rfc5280> |
+| RFC 5737 (문서용 IPv4 대역 — 이 책의 예시 주소) | <https://www.rfc-editor.org/rfc/rfc5737> |
 | OpenID Connect Core | <https://openid.net/specs/openid-connect-core-1_0.html> |
 | nftables wiki | <https://wiki.nftables.org/> |
 | firewalld | <https://firewalld.org/documentation/> |

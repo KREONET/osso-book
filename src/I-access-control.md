@@ -259,7 +259,7 @@ openstack server add security group ⟨인스턴스⟩ web
 - **tap1 같은 VM 쪽 인터페이스:** 여기에 iptables·ebtables·nftables 규칙이 걸립니다. VM마다 따로 걸 수 있는 자리입니다.
 - **br0:** OpenStack이 ML2 플러그인으로 Open vSwitch(OVS)를 쓰면, 브리지 수준의 OVS 규칙(OpenFlow)이 걸립니다.
 
-〔보충〕 OpenStack Neutron의 OVS 드라이버는 두 방식 중 하나로 Security Group을 구현합니다. *iptables_hybrid*는 VM마다 작은 리눅스 브리지를 하나 더 끼워 그곳의 iptables로, *openvswitch(native)* 는 OVS의 conntrack 연동 OpenFlow 규칙으로 처리합니다. 어느 쪽이든 "VM의 탭 인터페이스 바로 앞"이라는 위치는 같습니다. 이 구조는 Part 3의 PVE 브리지([Part 3 §3.1](03-network.md))와 같은 그림입니다.
+〔보충〕 OpenStack Neutron의 OVS 드라이버는 두 방식 중 하나로 Security Group을 구현합니다. *iptables_hybrid*는 VM마다 작은 리눅스 브리지를 하나 더 끼워 그곳의 iptables로, *openvswitch(native)* 는 OVS의 conntrack 연동 OpenFlow 규칙으로 처리합니다. 최근 배포에서 흔한 ML2/OVN은 Security Group을 OVN ACL로 정의하고, 그것이 다시 OVS의 conntrack 연동 흐름 규칙으로 내려갑니다. 어느 쪽이든 "VM의 탭 인터페이스 바로 앞"이라는 위치는 같습니다. 이 구조는 Part 3의 PVE 브리지([Part 3 §3.1](03-network.md))와 같은 그림입니다.
 
 ### Proxmox VE 방화벽
 
@@ -277,14 +277,14 @@ Proxmox VE의 방화벽도 nftables/iptables 위에서 동작하며, 여러 층�
 
 ```mermaid
 flowchart TB
-    DC["데이터센터(클러스터) 레벨<br/>클러스터 전체 공통 정책 — 모든 노드·게스트에 상속"]
+    DC["데이터센터(클러스터) 레벨<br/>주 스위치·기본 정책 — 규칙은 노드에, Security Group·IPSet은 게스트도 가져다 씀"]
     NODE["호스트(Node) 레벨<br/>PVE 서버 자체 보호 — SSH(22)·웹 UI 관리 접근을 특정 대역으로"]
     VM["VM / 컨테이너 레벨<br/>게스트별 서비스 포트만 Ingress 허용"]
     DC --> NODE
     DC --> VM
 ```
 
-- **데이터센터 레벨:** 클러스터 전체에 적용되는 최상위 정책입니다. 여기 정의한 규칙과 기본값이 모든 노드와 게스트에 상속되어 일관된 기준이 됩니다.
+- **데이터센터 레벨:** 클러스터 전체의 최상위 설정입니다. 여기의 `enable`이 클러스터 전체 방화벽의 주 스위치이고, 여기 `[RULES]`에 적은 규칙은 **모든 노드(호스트)** 에 적용됩니다. VM에는 직접 적용되지 않으며, 대신 여기 정의한 Security Group·IPSet을 VM 규칙이 가져다 써서 일관된 기준이 됩니다([PVE Firewall](https://pve.proxmox.com/pve-docs/chapter-pve-firewall.html)).
 - **호스트(Node) 레벨:** Proxmox VE가 설치된 물리 서버 자체를 보호합니다. 주로 SSH(22)와 웹 UI 같은 관리 접근을 특정 IP 대역으로 제한합니다.
 - **VM/컨테이너 레벨:** 개별 게스트에 맞춘 정책입니다. 각 VM이 제공하는 서비스에 필요한 포트만 골라 허용하는 Ingress 규칙을 쓰는 것이 일반적입니다.
 
@@ -292,7 +292,7 @@ flowchart TB
 
 - **상태 기반:** 한 번 허용된 연결의 응답 트래픽은 자동으로 허용됩니다.
 - **Security Group:** OpenStack처럼 Proxmox도 재사용 가능한 규칙 묶음을 미리 정의해 여러 VM에 한꺼번에 적용할 수 있습니다.
-- **초기 상태:** 방화벽은 기본 *비활성* 상태로 시작합니다. 데이터센터 레벨에서 켜는 순간 Input 기본 정책 DROP이 적용되어 인바운드가 막힙니다. 〔보충〕 이때 같은 로컬 네트워크(또는 `management` IPSet)에서 오는 웹 UI(8006)·SSH 접근은 자동 허용 규칙으로 살아 있지만, **다른 대역에서 원격으로 관리 중이라면 켜는 순간 스스로를 잠글 수 있습니다.** 켜기 전에 `management` IPSet에 내 관리 대역을 먼저 넣습니다.
+- **초기 상태:** 방화벽은 기본 *비활성* 상태로 시작합니다. 데이터센터 레벨에서 켜는 순간 Input 기본 정책 DROP이 적용되어 인바운드가 막힙니다. 〔보충〕 이때 `management` IPSet(클러스터의 로컬 네트워크는 자동으로 여기에 들어감)에서 오는 웹 UI(8006)·SSH(22)·콘솔(VNC 5900–5999, SPICE 3128) 접근은 자동 허용 규칙으로 살아 있지만, **다른 대역에서 원격으로 관리 중이라면 켜는 순간 스스로를 잠글 수 있습니다.** 켜기 전에 `management` IPSet에 내 관리 대역을 먼저 넣습니다.
 
 〔보충〕 Proxmox의 규칙은 웹 UI에서 만들어도 결국 텍스트 파일로 저장됩니다. 구조를 보면 계층이 바로 보입니다.
 

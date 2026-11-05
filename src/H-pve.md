@@ -4,7 +4,7 @@
 
 이 책의 실습은 대부분 PVE 위에서 돕니다. 이 부록은 그 PVE를 **직접 세우고, 네트워크를 짜고, 방화벽·스토리지를 잡고, 템플릿으로 VM을 찍어 내는** 과정을 한곳에 모은 것입니다. 이미지·클론·디스크 키우기처럼 본문이 이미 "왜"를 설명한 내용은 해당 절로 연결하고, 여기서는 PVE에서 **어디를 누르고 어떤 파일이 바뀌는지**에 집중합니다.
 
-예시 주소는 모두 문서용 대역(`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`)과 사설 대역(`10.10.0.0/24`)이고, 호스트 이름(`pve01`~`pve03`, `nas01`)도 예시입니다. 화면 캡처는 PVE 8.4 기준입니다.
+예시 주소는 모두 문서용 대역(`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`)과 사설 대역(`10.10.0.0/24`)이고, 호스트 이름(`pve01`~`pve03`, `nas01`)도 예시입니다. 화면 캡처는 PVE 8.4 기준입니다. 2026년 현재 주 버전은 데비안 13(trixie) 기반의 **PVE 9**(9.0은 2025년 8월 출시)이고, PVE 8은 2026년 8월에 지원이 끝났습니다([Proxmox VE FAQ](https://pve.proxmox.com/wiki/FAQ)). 이 부록의 메뉴 경로와 설정 파일은 PVE 9에서도 같지만, 화면 모양은 조금 다를 수 있습니다.
 
 ## H.1 개요
 
@@ -26,9 +26,9 @@ flowchart LR
 
 - <https://www.proxmox.com/en/downloads/>
 
-**데비안 12에 설치.** Debian 12 리눅스가 이미 설치되어 있다면 다음 공식 문서를 따라 그 위에 PVE를 얹습니다.
+**데비안 13에 설치.** Debian 13(trixie) 리눅스가 이미 설치되어 있다면 다음 공식 문서를 따라 그 위에 PVE 9를 얹습니다. (Debian 12 bookworm 위에는 PVE 8이 올라가지만, PVE 8은 지원이 끝났습니다.)
 
-- <https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_12_Bookworm>
+- <https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_13_Trixie>
 
 **V2P 설치.** PVE가 설치된 가상머신 이미지를 물리 머신의 디스크에 그대로 붓습니다. 원리는 [Part 1 §1.5](01-image.md)의 V2P와 같고, 손으로 해 보는 과정은 [실습②](labs/lab-02.md)에 있습니다. PVE 이미지를 부을 때는 붓고 난 뒤 **부팅 전에** 호스트 이름과 네트워크를 그 장비에 맞게 고쳐야 합니다.
 
@@ -49,13 +49,32 @@ vi /mnt/etc/network/interfaces
 유료 구독 없이 쓰면 웹 UI에 로그인할 때마다 "No valid subscription" 안내창이 뜹니다. 안내창을 띄우는 자바스크립트를 백업한 뒤 고칩니다.
 
 ```bash
-cp /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js.bak
-sed -i "s/\tExt.Msg.show/void/g" /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+JS=/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+cp $JS $JS.bak
+# "No valid subscription" 안내창을 띄우는 Ext.Msg.show 호출 하나만 무력화
+sed -Ezi "s/(Ext\.Msg\.show\(\{\s+title: gettext\('No valid sub)/void\(\{ \/\/\1/g" $JS
+# 바뀐 줄 확인: void({ //Ext.Msg.show({ 가 한 줄 보여야 함
+grep -n "void({ //Ext.Msg.show" $JS
 ```
+
+예전 판에 흔히 돌던 `sed -i "s/\tExt.Msg.show/void/g"`는 이 파일이 탭으로 들여쓰기되어 있던 시절의 방법입니다. PVE 9의 `proxmox-widget-toolkit`(5.x)은 공백으로 들여쓰기하므로 그 명령은 아무것도 바꾸지 못합니다. 위 명령은 들여쓰기와 상관없이 구독 안내창 호출 하나만 고칩니다.
 
 고친 뒤에는 브라우저 캐시를 비우고 다시 로그인합니다. 이 파일은 패키지(`proxmox-widget-toolkit`)가 업데이트되면 원래대로 덮어써지므로, 업데이트 뒤 안내창이 다시 보이면 같은 명령을 다시 실행합니다.
 
 ### H.2.3 추가 패키지 설치
+
+**먼저 패키지 저장소를 확인합니다.** 설치 직후의 PVE는 유료 구독용 **enterprise** 저장소만 켜져 있어서, 구독 없이 `apt update`를 하면 401 오류가 나고 패키지를 받을 수 없습니다. 구독 없이 쓴다면 enterprise 저장소를 끄고 **no-subscription** 저장소를 켭니다. 웹 UI의 **노드 → Updates → Repositories**에서 *Disable*·*Add*로 해도 되고, 파일로는 다음과 같습니다. PVE 9부터 저장소 파일은 deb822 형식(`.sources`)입니다([Package Repositories](https://pve.proxmox.com/wiki/Package_Repositories)).
+
+```text
+# /etc/apt/sources.list.d/proxmox.sources
+Types: deb
+URIs: http://download.proxmox.com/debian/pve
+Suites: trixie
+Components: pve-no-subscription
+Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+```
+
+enterprise 저장소는 `/etc/apt/sources.list.d/pve-enterprise.sources`에 `Enabled: no` 줄을 더해 끕니다. Ceph를 쓰면 `ceph.sources`도 같은 방식으로 바꿉니다. no-subscription 저장소는 공식 문서도 운영 서버에는 권하지 않는 저장소라는 점을 알아 둡니다.
 
 ```bash
 apt -y install ifupdown2 openvswitch-switch libguestfs-tools
@@ -63,7 +82,7 @@ apt -y install ifupdown2 openvswitch-switch libguestfs-tools
 
 | 패키지 | 쓰임 |
 | --- | --- |
-| `ifupdown2` | 네트워크 설정을 재부팅 없이 웹 UI에서 적용 |
+| `ifupdown2` | 네트워크 설정을 재부팅 없이 웹 UI에서 적용. PVE 7.0부터 새로 설치하면 기본으로 들어 있으므로, 옛 판에서 올린 호스트가 아니면 이미 설치된 상태 |
 | `openvswitch-switch` | H.3의 **OVS Bridge** 구성에 필요 |
 | `libguestfs-tools` | H.6.1에서 이미지를 꺼진 채로 고치는 `virt-customize`·`virt-sysprep` 등([Part 1 §1.3](01-image.md)) |
 
@@ -301,7 +320,7 @@ IN Ping(ACCEPT) -source +dc/inside -log nolog
 1. **Datacenter → Firewall → Options → Firewall = Yes**
 2. **Datacenter → Firewall → IPSet → `management` 추가 → IP/CIDR 추가**
 
-`management`라는 이름의 IP Set은 특별합니다. 방화벽을 켜면 웹 UI·SSH 같은 관리 접속은 이 묶음에서 오는 것만 허용됩니다.
+`management`라는 이름의 IP Set은 특별합니다. 방화벽을 켜면 웹 UI(8006)·SSH(22)·VNC/SPICE 콘솔 같은 관리 접속은 이 묶음에서 오는 것만 허용됩니다. 이 묶음은 **호스트 방화벽에만** 쓰이고(VM 방화벽에는 쓰이지 않음), 클러스터 자신의 로컬 네트워크는 자동으로 들어갑니다([PVE Firewall](https://pve.proxmox.com/pve-docs/chapter-pve-firewall.html)).
 
 파일을 직접 고쳐도 됩니다.
 
@@ -341,15 +360,15 @@ tcpflags: 1
 IN ACCEPT -p tcp -dport 3300,6789,6800:7568 -log nolog
 ```
 
-위 예는 Ceph 모니터·OSD 포트(3300, 6789, 6800–7568)를 여는 규칙입니다. `nftables: 1`은 iptables 대신 nftables 기반 방화벽을 쓰겠다는 옵션입니다(iptables와 nftables의 관계는 [Part 2 §2.1](02-firewall.md)). `tcpflags: 1`은 비정상적인 TCP 플래그 조합의 패킷을 걸러 냅니다.
+위 예는 Ceph 모니터·OSD 포트(3300, 6789, 6800–7568)를 여는 규칙입니다. `nftables: 1`은 iptables 대신 nftables 기반 방화벽(`proxmox-firewall`)을 쓰겠다는 옵션입니다(iptables와 nftables의 관계는 [Part 2 §2.1](02-firewall.md)). 기본값은 `0`이고, PVE 9에서도 공식 문서는 이것을 **기술 미리보기(tech preview)** 로 분류해 운영용으로는 아직 권하지 않습니다([PVE Firewall](https://pve.proxmox.com/pve-docs/chapter-pve-firewall.html)). 운영 호스트라면 빼 두는 편이 안전합니다. `tcpflags: 1`은 비정상적인 TCP 플래그 조합의 패킷을 걸러 냅니다.
 
 ### PVE VM 방화벽
 
-특정 VM에 접속할 수 있는 IP 범위를 제한합니다. VM이 PVE 호스트의 bridge에 붙는 지점에서 적용되므로, VM 안에 ufw·firewalld가 없어도 동작합니다. 세 군데를 모두 켜야 합니다.
+특정 VM에 접속할 수 있는 IP 범위를 제한합니다. VM이 PVE 호스트의 bridge에 붙는 지점에서 적용되므로, VM 안에 ufw·firewalld가 없어도 동작합니다. 앞의 Datacenter 방화벽(`cluster.fw`의 `enable: 1`)이 클러스터 전체의 주 스위치라서 그것이 켜져 있어야 하고, 그 위에서 VM 쪽 세 군데를 모두 켜야 합니다.
 
 1. **특정 VM 선택 → Firewall → Options**
    - Firewall = Yes
-   - IP filter = No (Yes로 되어 있으면 버그로 방화벽이 동작하지 않는 경우가 있음)
+   - IP filter = No (Yes로 두면 VM이 `ipfilter-net⟨n⟩` IP Set에 적힌 출발지 주소로만 패킷을 내보낼 수 있습니다. 그 IP Set을 만들지 않았으면 MAC에서 나온 IPv6 링크 로컬 주소 말고는 모두 막혀, VM 통신이 끊긴 것처럼 보입니다)
 2. **특정 VM 선택 → Firewall**에서 규칙 추가. *Insert: Security Group*으로 묶음을 끼워 넣습니다.
 3. **특정 VM 선택 → Hardware → Network Device → Firewall 체크**
 
@@ -556,8 +575,8 @@ Cloud-init은 클라우드 인스턴스 초기화 도구로, 운영체제가 부
 배포판 사이트에서 공식 클라우드 이미지를 내려받아, 방금 만든 VM의 빈 디스크 파일과 바꿔 끼웁니다.
 
 - <https://cloud-images.ubuntu.com>
-- <http://dl.rockylinux.org/pub/rocky/9/images/x86_64/>
-- <https://cdimage.debian.org/images/cloud/bookworm/>
+- <https://dl.rockylinux.org/pub/rocky/9/images/x86_64/>
+- <https://cdimage.debian.org/images/cloud/trixie/> (데비안 13; 12는 `bookworm/`)
 
 ```text
 # cd /var/lib/vz/images/100

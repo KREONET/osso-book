@@ -83,8 +83,8 @@ sudo sshd -t && sudo systemctl reload sshd
 그다음 **내 쪽** 설정:
 ```bash
 # bastion은 vmbr0(외부)·vmbr1(내부) 둘 다 꽂힌 멀티홈드 Rocky VM.
-# ★ 멀티홈드 원칙: default route는 vmbr0 쪽 하나만, 내부 대역(10.10.1.0/24)은 vmbr1로 명시 라우트.
-#   ip route add 10.10.1.0/24 dev ens19   (또는 nmcli c mod … +ipv4.routes)  ← 안 그러면 "어느 길로 나가지?" 모호
+# ★ 멀티홈드 원칙: default route는 vmbr0 쪽 하나만, 내부 대역(192.0.2.0/24)은 vmbr1로 명시 라우트.
+#   ip route add 192.0.2.0/24 dev ens19   (또는 nmcli c mod … +ipv4.routes)  ← 안 그러면 "어느 길로 나가지?" 모호
 # 내 쪽: ~/.ssh/config 맨 위에 Include 한 줄 (이미 있으면 건너뛴다)
 mkdir -p ~/.ssh/conf.d
 if ! grep -qx 'Include conf.d/\*.conf' ~/.ssh/config 2>/dev/null; then
@@ -98,7 +98,7 @@ Host bastion
   User jump
 Host lanvm
   # vmbr1 내부 주소
-  HostName ⟨10.10.1.5⟩
+  HostName ⟨192.0.2.5⟩
   ProxyJump bastion
 EOF
 # 실제로 적용되는 값 확인

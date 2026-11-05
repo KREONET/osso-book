@@ -8,7 +8,7 @@
 ```bash
 sudo firewall-cmd --get-active-zones
 # 내부망을 통째로 신뢰 영역에
-sudo firewall-cmd --permanent --zone=trusted --add-source=⟨10.10.0.0/24⟩
+sudo firewall-cmd --permanent --zone=trusted --add-source=⟨192.0.2.0/24⟩
 # 공개 영역엔 꼭 필요한 서비스만
 sudo firewall-cmd --permanent --zone=public --add-service=https
 sudo firewall-cmd --reload
