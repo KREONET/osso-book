@@ -52,15 +52,37 @@ docker exec -it ⟨web⟩ bash
 
 ⌨️ **② DB 컨테이너를 로컬 명령처럼 — `alias`**
 ```bash
-# DB를 docker로 띄워두고, 그 안의 CLI를 alias 한 줄로 끌어낸다
-alias influx='docker exec -it ⟨librenms_influx⟩ influx -database ⟨libre⟩'
-alias psql='docker exec -it ⟨pg⟩ psql -U ⟨postgres⟩'
-# 이제 그냥 이렇게. 로컬에 설치한 것처럼.
-influx
-# ~/.zshrc(또는 Day1 ① ohmyzsh 운영환경)에 넣어두면 장비마다 따라온다
+# 예측: 호스트에 psql이 있을까?
+which psql
+# PostgreSQL을 컨테이너로 띄운다 — 이름은 pg, 포트는 밖에 열지 않는다
+docker run -d --name pg -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16
+# 그 안의 psql을 alias 한 줄로 끌어낸다
+alias psql='docker exec -it pg psql -U postgres'
+# 이제 로컬에 설치한 것처럼
+psql -c 'select version();'
+# 정체 확인
+type psql
 ```
 
-💡 컨테이너를 "서비스"로만 보지 말고 **로컬 도구함**으로. `alias`가 그 다리 — ①의 ohmyzsh 운영환경과 **같은 결**(편의를 환경에 심는다).
+출력 예:
+```text
+psql not found
+…
+ PostgreSQL 16.x (Debian 16.x-1.pgdg120+1) on x86_64-pc-linux-gnu, …
+psql is an alias for docker exec -it pg psql -U postgres
+```
+
+> 현장에서는 이렇게 쓴다. LibreNMS가 InfluxDB를 컨테이너로 띄워 두었다면:
+>
+> `alias influx='docker exec -it librenms_influxdb influx -database librenms'`
+>
+> 컨테이너 이름은 `docker ps`의 NAMES 열에서, DB 이름은 그 서비스의 설정에서 확인한다. alias는 `~/.zshrc`(①의 ohmyzsh 운영환경)에 넣어 두면 장비마다 따라온다.
+
+👀 **보이는 것:** 호스트에는 `psql`이 없는데 `psql`이 된다. `type`으로 보면 정체는 `docker exec`. 버전은 컨테이너 이미지의 것(16)이다.
+
+💡 컨테이너를 "서비스"로만 보지 말고 **로컬 도구함**으로. `alias`가 그 다리 — ①의 ohmyzsh 운영환경과 **같은 결**(편의를 환경에 심는다). 클라이언트를 따로 깔지 않으니 **서버와 버전이 어긋날 일도 없다.** 다 봤으면 `docker rm -f pg`.
+
+⚠️ `POSTGRES_HOST_AUTH_METHOD=trust`는 암호 없이 붙게 하는 **실습 전용** 설정이다. 포트를 밖에 열지 않았기 때문에 이 VM 안에서만 쓸 수 있다. 실제 서비스에서는 쓰지 않는다.
 
 ⌨️ **③ 설정은 굽지 말고 — 추출→수정→마운트**
 ```bash
