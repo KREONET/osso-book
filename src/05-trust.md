@@ -63,6 +63,19 @@ Summary     : The Mozilla CA root certificate bundle
 - 고치는 순서: **① 시계부터 확인**(배터리가 방전돼 날짜가 틀리면 모든 인증서가 "기간 아님"이 됩니다) → **② OS 업데이트**(키스토어도 같이 갱신) → ③ 더는 업데이트가 안 되는 OS라면 필요한 루트를 공식 배포처에서 받아 직접 심거나([5.4](#54-키스토어에-뿌리-심기--윈도ios안드)), 자체 루트 목록을 들고 다니는 최신 Firefox를 씁니다.
 - 서버도 같습니다. 몇 년 전에 구운 골든 이미지나 업데이트를 멈춘 서버는 `ca-certificates`가 낡아, 어느 날 외부 API·저장소 접속이 인증서 오류로 실패합니다. **OS 업데이트는 보안 패치일 뿐 아니라 "누구를 믿을지"의 갱신**이기도 합니다([Part 1](01-image.md)의 이미지 패치 때 같이 올려 두세요).
 
+
+### "인증서"라는 말이 불편하다면 — 공인인증서의 기억
+
+우리나라에서 "인증서"라고 하면 많은 사람이 **공인인증서와 액티브X**를 떠올립니다. 은행·관공서 사이트마다 보안 프로그램을 몇 개씩 깔아야 했고, 인증서 파일을 USB에 담아 들고 다녔고, 브라우저를 바꾸면 안 됐습니다. 감정이 좋을 리 없습니다. 그런데 그 불편함은 **인증서라는 기술** 때문이 아니라, 브라우저와 OS에 이미 있는 기능을 두고 **따로 만든 플러그인과 따로 둔 저장소**를 쓰게 했기 때문입니다(공인인증서 제도는 2020년 12월 전자서명법 개정으로 폐지되어 지금은 '공동인증서'라고 부릅니다).
+
+실제로는 이렇습니다.
+
+- **키스토어(키체인)는 OS의 기본 기능입니다.** 윈도우의 인증서 저장소, macOS·iOS의 키체인, 안드로이드의 자격 증명 저장소, 리눅스의 `ca-certificates`가 모두 처음부터 들어 있습니다. 따로 깔 것이 없습니다.
+- **같은 표준입니다.** 공인(공동)인증서, 웹사이트의 HTTPS 인증서, 아래 5.6의 mTLS 클라이언트 인증서는 모두 **X.509** 형식의 인증서입니다. 쓰임새(누가, 무엇을 증명하나)만 다릅니다.
+- **브라우저에 이미 들어 있습니다.** 서버 인증서 검증은 물론, 클라이언트 인증서를 골라 내미는 기능도 모든 주요 브라우저에 기본으로 있습니다. 플러그인이 필요 없습니다.
+
+이 장에서 다루는 것은 이 **표준 기능을 표준대로 쓰는 법**입니다.
+
 ### 확인 커맨드
 
 ```bash
@@ -376,6 +389,58 @@ sequenceDiagram
 - **5.3의 사설 CA를 그대로 씁니다.** 서버 인증서를 찍던 같은 CA가 클라이언트 인증서도 찍습니다. 신뢰의 뿌리를 하나 두고 양방향에 쓰는 것입니다.
 어울리는 곳은 **관리망(관리 콘솔, 대시보드), 서비스 간 API, 사람이 아닌 기기 인증**입니다. 사용자가 많고 기기가 제각각인 공개 서비스에는 인증서 배포가 부담이라 어울리지 않습니다.
 
+### mTLS = 제로 트러스트
+
+**제로 트러스트**(Zero Trust)는 "내부망에 있으니 믿는다"를 버리고, **연결할 때마다 그 주체가 누구인지 확인하고 필요한 만큼만 허락하는** 보안 방식입니다(미국 NIST SP 800-207). mTLS는 이것을 가장 직접적으로 구현하는 수단입니다. 어디서 접속했느냐(IP·망)가 아니라 **무엇을 들고 왔느냐(인증서)**로 판단하기 때문입니다.
+
+서버가 클라이언트 인증서를 받으면 이런 순서로 확인합니다.
+
+```mermaid
+flowchart TB
+  C["클라이언트 인증서 도착"] --> Q1{"① 내가 아는 CA에서<br/>이어진 인증서인가"}
+  Q1 -- "아니오" --> X["거부"]
+  Q1 -- "예" --> Q2{"② 폐기(revoke)되지 않았나"}
+  Q2 -- "폐기됨" --> X
+  Q2 -- "유효" --> Q3{"③ 유효기간 안인가"}
+  Q3 -- "지남" --> X
+  Q3 -- "예" --> Q4{"④ 속성 조건을 만족하나<br/>예: CN이 .ops로 끝나는가"}
+  Q4 -- "아니오" --> F["403 — 들어오긴 했지만 권한 없음"]
+  Q4 -- "예" --> OK["이용 가능 — 조건에 맞는 권한으로"]
+```
+
+①~③은 [5.1](#51-tls가-믿는-것--ca체인키체인)에서 브라우저가 서버 인증서에 하던 확인과 같습니다(②의 폐기 확인은 CRL·OCSP로 하며, 서버 소프트웨어마다 지원이 다르니 문서를 확인합니다. 지원이 없으면 유효기간을 짧게 잡아 "폐기" 대신 "만료"에 기대는 방법을 씁니다). 강력한 건 ④입니다. 인증서의 **CN**(Common Name)·OU 같은 속성에 정규식 조건을 걸어 **분기**하고, 분기마다 다른 권한을 줄 수 있습니다. 같은 CA가 찍어 준 인증서라도 "운영팀(`*.ops`)은 관리 화면, 개발팀(`*.dev`)은 읽기 전용"처럼 접근을 잘게 나눌 수 있습니다.
+
+```text
+srv.lab.local {
+	tls srv.crt srv.key {
+		client_auth {
+			mode require_and_verify
+			trust_pool file ca.crt
+		}
+	}
+	# 인증서 주체(Subject)의 CN이 .ops 로 끝나면 관리 화면으로
+	@ops vars_regexp {tls_client_subject} "CN=[^,]+\.ops(,|$)"
+	handle @ops {
+		reverse_proxy 127.0.0.1:9000
+	}
+	# 같은 CA의 인증서라도 그 밖은 거절
+	handle {
+		respond "403 forbidden: {tls_client_subject}" 403
+	}
+}
+```
+
+Caddy 2.11에서 시험한 결과입니다. 같은 CA로 `CN=alice.ops`와 `CN=bob.dev` 두 인증서를 만들어 접속했습니다.
+
+```text
+alice.ops -> 200  (관리 화면)
+bob.dev   -> 403 forbidden: CN=bob.dev,OU=lab,O=Example
+인증서 없음 -> TLS 핸드셰이크 단계에서 끊김 (curl 종료 코드 55)
+```
+
+> ⚠️ Caddyfile의 따옴표 안에서 정규식의 점(`.` 문자 그대로)은 `\.`처럼 백슬래시 **하나**로 씁니다. 다른 언어 습관대로 두 개(`\\.`)를 쓰면 아무 인증서도 조건에 맞지 않아 모두 403이 됩니다. 시험하다 실제로 겪은 실수입니다.
+
+
 ### 만드는 법 (요약)
 
 ```bash
@@ -423,4 +488,6 @@ openssl s_client -connect srv.lab.local:443 -servername srv.lab.local </dev/null
 
 - [RFC 8446 §4.3.2 — CertificateRequest (클라이언트 인증)](https://www.rfc-editor.org/rfc/rfc8446#section-4.3.2)
 - [Caddy — tls 지시자 client_auth](https://caddyserver.com/docs/caddyfile/directives/tls#client_auth)
+- [Caddy — vars_regexp 매처](https://caddyserver.com/docs/caddyfile/matchers#vars-regexp) · [플레이스홀더 목록](https://caddyserver.com/docs/caddyfile/concepts#placeholders) (`{tls_client_subject}` 등)
+- [NIST SP 800-207 — Zero Trust Architecture](https://csrc.nist.gov/pubs/sp/800/207/final)
 - [Cloudflare — mTLS 설명](https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/)
