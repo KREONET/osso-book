@@ -168,6 +168,38 @@ type cd
 type ls
 ```
 
+**BusyBox — 명령 300개가 파일 하나.** 임베디드 장비와 경량 컨테이너(Alpine 등)에서는 `ls`·`cp`·`sh`·`ip` 같은 흔한 도구를 따로따로 두지 않고, **BusyBox라는 실행 파일 하나**에 모두 넣습니다. 각 명령은 그 파일을 가리키는 링크이고, BusyBox는 자기가 **어떤 이름으로 불렸는지**(`argv[0]`)를 보고 그 명령처럼 동작합니다.
+
+```bash
+docker run --rm alpine:3.20 sh -c 'ls -l /bin/ls /bin/sh /sbin/ip; busybox --list | wc -l; ls -l /bin/busybox'
+```
+
+```text
+lrwxrwxrwx  1 root  root      12 … /bin/ls -> /bin/busybox
+lrwxrwxrwx  1 root  root      12 … /bin/sh -> /bin/busybox
+lrwxrwxrwx  1 root  root      12 … /sbin/ip -> /bin/busybox
+304
+-rwxr-xr-x  1 root  root  808712 … /bin/busybox
+```
+
+800 KB 파일 하나에 명령 304개 — Alpine 이미지 전체가 12 MB인 비결입니다. 그럼 fork는 안 일어날까요? 확인해 봅시다. `/proc/self`는 "지금 이걸 읽는 프로세스 자신"을 가리킵니다.
+
+```bash
+# 셸의 PID와, 셸이 띄운 명령들의 PID
+docker run --rm alpine:3.20 sh -c 'echo "셸: $$"; readlink /proc/self; readlink /proc/self; readlink /proc/self'
+```
+
+```text
+셸: 1
+7
+8
+1
+```
+
+명령마다 **새 PID**(7, 8)입니다. BusyBox도 여전히 fork → exec를 합니다(같은 파일을 다시 exec할 뿐). 그런데 **마지막 줄은 1** — 셸 자신의 PID입니다. 더 할 일이 없는 마지막 명령은 셸이 fork하지 않고 **자기 몸을 그 명령으로 바로 갈아 끼웁니다(exec만).** 돌아올 필요가 없으니 복제할 이유도 없는 것이죠. bash도 `bash -c`에서 똑같이 합니다. 컨테이너의 PID 1이 셸 스크립트 끝에서 `exec 앱`으로 앱에게 자리를 넘겨주는 관례도 같은 원리입니다. 아끼는 건 **디스크와 메모리**입니다. 실행 파일이 하나뿐이라 디스크에 한 번만 있고, 메모리에도 한 번만 올라가 여러 프로세스가 같이 씁니다. (BusyBox를 직접 빌드할 때 일부 간단한 명령을 fork 없이 셸 안에서 돌리게 하는 옵션도 있지만, Alpine의 기본 설정에서는 위처럼 fork합니다.)
+
+> ⚠️ 경량 이미지에서 "명령은 있는데 옵션이 다르다"는 일이 생기는 이유이기도 합니다. BusyBox의 `ls`·`grep`·`ip`는 GNU 도구를 줄인 판이라 일부 옵션이 없습니다. 예를 들어 GNU `ip`의 짧은 출력 옵션 `ip -br addr`을 Alpine에서 치면 결과 대신 BusyBox의 사용법(`BusyBox v1.36.1 … multi-call binary`)이 나옵니다. 앞에서 본 `ip addr`도 BusyBox의 `ip`였습니다.
+
 ### 환경변수 — 자식에게 물려주는 쪽지
 
 `exec`로 몸을 갈아 끼우면 부모에게서 복제한 메모리는 사라집니다. 그런데 딱 하나, 갈아 끼울 때 **함께 넘겨주는 쪽지 묶음**이 있습니다. 그게 **환경변수**입니다. 셸 변수 중 `export`한 것만 이 쪽지에 적힙니다.
