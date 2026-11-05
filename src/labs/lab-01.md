@@ -75,6 +75,8 @@ virt-copy-in -a ⟨image.img⟩ 60-lab.conf /etc/ssh/sshd_config.d/
 
 > ⚠️ **주석은 설정 줄 끝에 붙이지 말고 별도 줄로.** `PasswordAuthentication no  # 랩용` 처럼 쓰면 방금 본 `grep -v '#'`가 **설정 줄 통째로** 걸러 버린다. 게다가 많은 파서는 인라인 `#`을 주석으로 안 보고 **값의 일부로** 읽는다. 그래서 관례가 "주석은 윗줄에".
 
+> ⚠️ **RHEL 계열에서 포트를 바꾸면(예: `Port 2222`) SELinux가 막는다.** 설정은 맞는데 서비스가 안 뜬다 → 흔한 유혹이 "SELinux 끄기"다. **끄지 말 것.** 포트에 라벨을 알려 주면 된다: `sudo semanage port -a -t ssh_port_t -p tcp 2222`. 왜 끄면 안 되는지, 로그(`ausearch`) 읽고 규칙 만드는 법은 [Part 1 §1.4](../01-image.md)에서.
+
 ⌨️ **생각해보기:** 아래도 각자 `*.d/`가 있다. "원본을 고칠까, 조각을 얹을까?" — 답은 거의 늘 **얹기**다. 어느 걸 `virt-copy-in`으로 넣어 보겠는가?
 `/etc/sudoers.d/` · `/etc/rsyslog.d/`(로그 라우팅) · `/etc/cron.d/` · `/etc/profile.d/`(로그인 환경·프롬프트) · `/etc/sysctl.d/`(커널 파라미터) · `/etc/systemd/system/⟨서비스⟩.service.d/`(유닛 오버라이드) · `/etc/apt/apt.conf.d/`·`sources.list.d/` · `/etc/yum.repos.d/` · `/etc/NetworkManager/conf.d/` · `/etc/modprobe.d/` · `/etc/logrotate.d/`
 

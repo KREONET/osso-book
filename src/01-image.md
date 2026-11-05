@@ -105,6 +105,34 @@ Rocky/RHEL 계열에는 한 가지가 더 있습니다. 오프라인으로 파�
 
 더 깊이: [virt-sysprep](https://libguestfs.org/virt-sysprep.1.html), [machine-id(5)](https://www.freedesktop.org/software/systemd/man/latest/machine-id.html), [RHEL SELinux 문서](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux/index).
 
+### SELinux를 끄지 마세요 — 끄는 게 아니라 "가르치는" 것
+
+**멘탈모델:** SELinux는 성가신 방해물이 아니라, *프로세스가 자기 일 바깥을 못 넘게 가두는* 보안 그물이다. 앱이 안 뜬다고 그물을 치우는 건, 사고가 날 길을 열어 두는 것이다.
+
+RHEL 계열은 "까다롭다"는 말을 자주 듣습니다. 기본 프로그램의 **포트를 바꾸거나**, 새 앱을 띄우거나, 비표준 경로에 파일을 두면 — 분명히 설정은 맞는데 서비스가 거부당합니다. 범인은 대개 SELinux입니다. 그리고 인터넷의 수많은 답이 `setenforce 0`나 `SELINUX=disabled`로 **그냥 꺼 버리라**고 말합니다. 이 과정에서는 그렇게 하지 않습니다.
+
+SELinux(Security-Enhanced Linux)는 미국 국가안보국(**NSA**)이 만들어 리눅스 커널에 기여한 **강제적 접근 제어(MAC)** 입니다. 보통의 리눅스 권한(소유자·그룹·rwx)은 *사용자*가 무엇을 할 수 있는지를 정하는 임의적 접근 제어(DAC)지만, SELinux는 *프로세스*에 라벨(type)을 붙이고 "이 type은 이 type의 파일·포트에만 접근"이라는 규칙을 커널이 강제합니다. 그래서 웹서버가 뚫려도 공격자는 `httpd_t`가 허락된 것 밖으로 — 예컨대 `/etc/shadow`나 임의 포트로 — 나가지 못합니다. 침해의 **폭발 반경을 줄이는** 장치입니다. 끄는 순간 이 그물이 통째로 사라집니다.
+
+그러니 막혔을 때의 올바른 순서는 "끄기"가 아니라 "**읽고 가르치기**"입니다.
+
+```bash
+sudo ausearch -m avc -ts recent          # 최근 거부(AVC) 로그를 본다 — '무엇이 왜 막혔나'
+sudo ausearch -m avc -ts recent | audit2allow -w   # 사람이 읽는 설명으로 풀어 준다
+# 포트를 바꾼 경우(가장 흔함): 새 포트에 라벨을 붙인다 (끄는 게 아니라 '알려 주기')
+sudo semanage port -a -t ssh_port_t -p tcp 2222
+# 비표준 경로/동작이면: 거부 로그로 '최소 정책'을 생성·적용
+sudo ausearch -m avc -ts recent | audit2allow -M mylocalpol && sudo semodule -i mylocalpol.pp
+sudo restorecon -Rv /srv/myapp           # 파일 라벨이 틀어졌을 때 표준 라벨로 복원
+```
+
+AVC 로그는 사람에게 암호 같아 보이지만 — **여기서 AI가 특히 쓸모 있습니다.** `ausearch` 출력을 그대로 붙여 "이 거부가 왜 났고 최소 권한 정책은 무엇이냐"고 물으면, 어떤 type·포트·경로가 걸렸는지 풀어 주고 `audit2allow` 결과까지 검토해 줍니다. 무턱대고 `allow` 전체를 심는 대신 **딱 필요한 규칙만** 남기도록 — 그게 [Part 7(AI 거버넌스)](07-ai-governance.md)에서 말하는 "AI를 조수로 쓰되 최소 권한 원칙은 사람이 지킨다"의 구체적 사례입니다. 디버깅 중 잠깐 원인을 좁히려면 `setenforce 0`(permissive, **재부팅하면 원복**)로 "지금 끈다면 뜨나?"만 확인하고 곧바로 다시 켜되, 영구 비활성화(`SELINUX=disabled`)는 하지 않습니다.
+
+컨테이너에서도 같은 원리가 보입니다. 볼륨 마운트가 거부되면 끄는 대신 `:z`/`:Z` 라벨 옵션으로 공유 라벨을 붙입니다([Part 4](04-container.md)).
+
+**데비안·우분투·SUSE는 보통 SELinux 대신 [AppArmor](https://apparmor.net/)** 를 씁니다. 둘 다 커널의 LSM이지만 접근법이 다릅니다 — SELinux는 *라벨(type)* 기반이라 강력하고 세밀한 대신 학습 곡선이 가파르고, AppArmor는 `/etc/apparmor.d/`의 **경로 기반 프로파일**이라 읽고 고치기 쉽습니다. 막혔을 때의 철학은 똑같습니다. 프로파일을 `aa-complain`으로 잠시 관찰 모드에 두고 `aa-logprof`로 로그를 읽어 규칙을 다듬지, 통째로 끄지 않습니다. *어느 배포판을 쓰든 "안 되면 보안 모듈부터 끈다"는 방향이 아니라 "로그를 읽어 규칙을 만든다"가 안전 운영입니다.*
+
+더 깊이: [RHEL SELinux 사용 가이드](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/using_selinux/index), [audit2allow·semanage](https://linux.die.net/man/1/audit2allow), [AppArmor 위키](https://gitlab.com/apparmor/apparmor/-/wikis/home).
+
 ## 1.5 배포의 세 길과 복구 — PVE Clone / V2P / Clonezilla
 
 **멘탈모델:** 되돌리는 세 가지 방법은 *무엇을 뜨고, 어디서 누르는가*가 다르다.
