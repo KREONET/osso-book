@@ -299,32 +299,115 @@ docker run --rm alpine wget -qO- https://deb.debian.org >/dev/null && echo OK
 
 ## 2.5 인바운드 선차단 — 평판 기반 nftables
 
-**멘탈모델.** fail2ban은 "들어와서 나쁜 짓을 한 뒤 벤"입니다. 평판 기반 선차단은 **들어오기 전에 드랍**합니다. 알려진 스패머·악성 ASN·남용 신고 IP 목록을 커널의 nftables **set**으로 올려 두고, 규칙 하나가 set 조회로 수만 prefix를 한 번에 거릅니다.
+**멘탈모델.** fail2ban은 "들어와서 나쁜 짓을 한 뒤 벤"입니다. 평판 기반 선차단은 **들어오기 전에 드랍**합니다. 이미 나쁘다고 알려진 주소 목록을 커널의 nftables **set**으로 올려 두고, 규칙 하나가 set을 조회해 수만 개의 대역을 한 번에 거릅니다.
+
+이 책의 도구는 KREONET의 [republock](https://github.com/KREONET/republock)입니다(MIT 라이선스). 자기 nftables 테이블을 따로 만들고 **priority -150**에서 동작하므로, fail2ban(-1)이나 ufw(0)보다 먼저 패킷을 봅니다.
 
 ```text
-패킷 → [평판 set 조회: 있으면 drop] → ufw/firewalld → fail2ban(로그 기반)
-        ↑ 가장 앞단(낮은 priority 훅)
+들어오는 패킷
+  └─ [inet republock]    priority -150   ← 가장 먼저
+        ├ 루프백 · 관리자 대역(ADMIN_NETS) · 이미 맺어진 연결 → 통과
+        └ 출발지가 @spammers · @abuseipdb · @asndrop (· 국가) 에 있으면 → drop
+  └─ [inet f2b-table]    priority -1      (fail2ban이 밴한 IP)
+  └─ [ip filter INPUT]   priority 0       (ufw 규칙)
 ```
 
-**왜 앞단인가.**
+기본 훅은 `prerouting`이라 호스트 서비스뿐 아니라 **Docker publish 포트로 가는 트래픽도** 거릅니다. INPUT에만 걸면 2.2의 함정(DNAT 뒤 FORWARD로 빠짐)을 그대로 밟습니다.
 
-- 규칙이 수만 줄이면 선형 탐색은 느리지만, nftables set(해시/구간 트리)은 조회가 빠릅니다. 그래서 *목록 기반 차단은 규칙이 아니라 set*으로 합니다.
-- ufw/fail2ban이 보기 전에 버리므로 포트 스캔·노크 로그가 줄고, 뒤 단의 규칙·로그가 깨끗해집니다.
-- 단, **조회 대상이 INPUT뿐이면 2.2의 함정이 그대로**입니다. Docker publish 포트까지 거르려면 PREROUTING 훅(또는 FORWARD)에 걸려야 합니다. 선차단을 어느 훅에 두었는지 꼭 확인하세요.
+### 목록은 어디서 오나 — 소스마다 운영 방식이 다르다
 
-[실습⑤](labs/lab-05.md)에서는 `republock`으로 약 11만 엔트리를 올려 확인합니다.
+평판 목록은 누군가가 계속 관리하는 **공개 데이터**입니다. 누가, 어떤 기준으로 만드는지를 알아야 오탐의 성격도 압니다.
+
+| 그룹 | 소스 | 누가 · 어떻게 만드나 | 오탐 성격 |
+| --- | --- | --- | --- |
+| `spammers` | [Spamhaus DROP](https://www.spamhaus.org/drop/) | 스팸·사이버범죄 조직이 탈취했거나 통째로 쓰는 대역을 Spamhaus 분석가가 직접 판정 | 매우 적음 |
+| | [FireHOL level1](https://github.com/firehol/blocklist-ipsets) | 여러 공개 목록을 모아 "오탐 최소"를 기준으로 합친 목록 | 적음 (level2·3은 오탐이 많아 쓰지 않음) |
+| | [blocklist.de](https://www.blocklist.de/) | 참여 서버들이 fail2ban 등으로 잡은 공격 IP를 자동 신고 | 털린 정상 호스트가 섞임 |
+| `abuseipdb` | [AbuseIPDB](https://www.abuseipdb.com/) | 전 세계 운영자가 공격 IP를 신고하면 신뢰도 점수를 매김. 그중 신뢰도 100%, 최근 7일치 | 털린 정상 호스트가 섞임 |
+| `asndrop` | [Spamhaus ASN-DROP](https://www.spamhaus.org/blocklists/do-not-route-or-peer/) | 네트워크(ASN) **전체가 악성**인 방탄호스팅 사업자 목록. republock이 ASN 번호를 대역으로 펼침 | 매우 적음 (대형 클라우드·통신사 없음) |
+| `cn`·`ru` 등 (선택) | [ipdeny.com](https://www.ipdeny.com/) | 아래의 주소 관리 기구 할당 기록을 국가별로 정리 | 그 나라의 정상 사용자까지 전부 |
+
+기본 세 그룹(`spammers`·`abuseipdb`·`asndrop`)을 합치면 약 11만 5천 개 대역입니다(republock 실측, 2026-09-10). `systemd` 타이머가 **매주 자동으로** 목록을 갱신합니다.
+
+### 국가별 차단 — 주소 관리 기구가 이미 장부를 공개한다
+
+IP 주소는 아무나 쓰는 게 아니라, 다섯 곳의 **지역 인터넷 주소 관리 기구(RIR)** 가 나눠 줍니다.
+
+| RIR | 담당 지역 |
+| --- | --- |
+| APNIC | 아시아·태평양 (한국은 그 아래 KISA가 국가 관리 기구 역할) |
+| ARIN | 북미 |
+| RIPE NCC | 유럽·중동·중앙아시아 |
+| LACNIC | 중남미 |
+| AFRINIC | 아프리카 |
+
+이 기구들은 **어느 대역을 어느 나라의 누구에게 할당했는지를 매일 공개 파일로 내놓습니다.** 국가별 IP 목록은 비밀 정보가 아니라 이 공개 장부를 정리한 것입니다. 직접 받아 볼 수 있습니다.
 
 ```bash
-sudo republock status
-sudo nft list set inet republock blocklist | head
-# 어느 훅·priority에 걸렸나
-sudo nft list ruleset | grep -n -B2 -A4 republock
-sudo journalctl -k | grep -i drop | tail
+curl -s https://ftp.apnic.net/stats/apnic/delegated-apnic-extended-latest -o apnic.txt
+# 형식: 기구|국가|종류|시작주소|주소 개수|할당일|상태
+grep '|KR|ipv4|' apnic.txt | head -3
+# 한국에 할당된 IPv4 블록 수
+grep -c '|KR|ipv4|' apnic.txt
 ```
 
-**한계도 알아 둡니다.** 평판 목록은 *과거의 나쁨*입니다. 처음 보는 공격자는 못 거르고, 공유 NAT 뒤 정상 사용자를 오탐할 수 있습니다. 그래서 **대체가 아니라 앞단 한 겹**입니다.
+출력 예 (2026-11-05):
 
-**바깥 링크:** [nftables wiki — Sets](https://wiki.nftables.org/wiki-nftables/index.php/Sets) · [nftables wiki — Netfilter hooks](https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks) · [fail2ban](https://github.com/fail2ban/fail2ban)
+```text
+apnic|KR|ipv4|1.11.0.0|65536|20100616|allocated|A922C04D
+apnic|KR|ipv4|1.16.0.0|16384|20100512|allocated|A9222B0E
+apnic|KR|ipv4|1.16.64.0|16384|20100512|allocated|A92E438A
+2422
+```
+
+그래서 국가 차단은 **쉽습니다.** republock에서는 설정에 `COUNTRIES="cn ru"`를 넣고 `republock update` 하면 끝입니다(기본은 꺼져 있음). 다만 쉬운 만큼 한계가 분명합니다.
+
+- **장부의 국가는 "등록한 곳"이지 "실제로 쓰는 곳"이 아닙니다.** 공격자는 다른 나라의 클라우드·VPN을 빌려 씁니다. 악성 사업자 목록(ASN-DROP)도 국가로 보면 우크라이나·인도·미국·몰도바 순으로 많아서(republock 실측 2026-09-10), 몇 나라를 막는 것으로는 잡히지 않습니다.
+- **그 나라의 정상 사용자도 전부 막힙니다.** 해외 공동연구자, 학회 참석자가 대표적입니다.
+- **차단한 나라로 출장 가면 내 서버에 못 들어옵니다.** 그 나라에서 받은 내 IP가 이미 막혀 있으니 원격으로 풀 수도 없습니다. **출발 전에** `republock disable ⟨국가⟩`로 풀어 둡니다.
+
+### 왜 규칙이 아니라 set인가
+
+규칙 11만 줄을 위에서부터 하나씩 비교하면 패킷마다 느려집니다. nftables의 구간(interval) set은 대역 조회에 특화된 자료구조(pipapo)를 써서, 목록이 커져도 조회가 빠릅니다. 대신 메모리를 씁니다. republock 문서의 실측으로 원소 하나에 약 0.8 KB, 기본 11만 5천 개면 **약 90 MB**입니다. 목록 크기에 정비례하므로, 국가를 많이 넣으면 그만큼 늘어납니다. CPU는 거의 들지 않습니다(host 모드에서는 새 연결의 첫 패킷만 조회).
+
+### 한계 — 앞단 한 겹이지, 대체가 아니다
+
+- 평판 목록은 **과거의 나쁨**입니다. 처음 보는 공격자는 못 거릅니다.
+- 신고 기반 목록(`abuseipdb`, blocklist.de)에는 **털려서 스캔을 돌리는 정상 서버**가 섞여 있습니다. 협력 기관 서버가 그 상태라면 우리도 그쪽과 통신이 끊깁니다.
+- drop은 **조용합니다.** 로그도 응답도 없이 사라집니다. "왜 안 붙지?" 싶으면 먼저 `sudo republock check ⟨IP⟩`로 목록에 있는지 봅니다.
+- 반드시 통과해야 하는 대역(관리망, 협력 기관)은 `ADMIN_NETS`에 넣습니다. 모든 drop보다 먼저 통과시킵니다. 설치할 때 최소 하나는 넣으세요. 이미 맺어진 SSH 연결은 목록이 바뀌어도 끊기지 않습니다.
+
+### 현장 이야기 — 오래된 CC 인증 방화벽 앞에 투명 브릿지로
+
+republock은 이런 현장에서 나왔습니다.
+
+공공기관은 CC 인증을 받은 방화벽을 씁니다. 그런데 **유지보수 계약이 끝나면 장비가 늙습니다.** 방화벽이 띄우는 경고를 보고 사람이 규칙을 만들어 넣는데, 오탐 경고가 많고, 오래된 장비는 API도 변변치 않아 규칙 갱신이 몹시 번거롭습니다. 평판 목록처럼 매주 바뀌는 수만 개 대역을 손으로 넣는 건 불가능에 가깝습니다.
+
+그래서 **방화벽 앞단에 republock을 투명 브릿지로 끼웁니다**(`MODE=bridge`). 선 위에 끼어서 패킷을 그대로 넘기다가 평판이 나쁜 것만 떨어뜨리므로, 앞의 라우터도 뒤의 방화벽도 설정을 바꿀 필요가 없습니다. 기존 방화벽은 그대로 두고, 쓰레기를 미리 덜어 주는 것입니다.
+
+```text
+인터넷 ─ 라우터 ─[ republock 브릿지 ]─ CC 인증 방화벽 ─ 내부망
+                  10G NIC ↔ 10G NIC
+                  (IP 없음 · 매주 목록 자동 갱신)
+```
+
+장비는 거창할 필요가 없습니다. 강사의 경험으로는 **10년 된 서버에 10G NIC 두 장**, 또는 i5·i7급 PC에 10G NIC를 꽂은 정도면 충분했고, 비용은 50만 원 안쪽입니다. nftables의 set 조회가 가벼워서, 일반적인 기관 트래픽에서 10G는 여유롭게 처리합니다.
+
+브릿지 모드는 host 모드와 몇 가지가 다릅니다([republock 브릿지 문서](https://github.com/KREONET/republock/blob/main/docs/bridge.ko.md)).
+
+- **브릿지와 멤버 포트에 IP를 주지 않습니다.** 관리는 별도 NIC로 합니다. IP를 주는 순간 투명 브릿지가 아니라 라우팅 장비가 됩니다.
+- **연결 추적(conntrack)을 쓰지 않습니다.** 지나가는 모든 연결을 기억하면 그 표가 꽉 찰 때 패킷이 떨어지고, 그게 곧 공격 수단이 되기 때문입니다. 대신 연결의 첫 패킷만이 아니라 **모든 패킷**을 조회합니다.
+- **출발지든 목적지든** 목록에 있으면 막습니다. 그래서 브릿지 뒤의 서버도 목록에 오른 주소로는 나가지 못합니다.
+- 같은 장비에서 Docker를 돌리면 브릿지 트래픽이 ufw·Docker 규칙으로 빨려 들어가 통째로 막힐 수 있습니다(`bridge-nf-call-iptables` 함정). republock이 설치할 때 검사하고 경고합니다.
+
+⚠️ 선 위에 놓는 장비는 **고장 나면 선이 끊깁니다.** 넣기 전에 정해 둘 것이 있습니다.
+
+- **장애 대비:** 장애 시 우회 방법을 정합니다. 바이패스 기능이 있는 NIC를 쓰거나, 케이블을 직결하는 절차를 둡니다.
+- **충분한 검증:** NIC 두 장짜리 VM에서 먼저 만들어 봅니다. 재부팅 후 설정이 모두 돌아오는지, 포트를 하나 뽑았을 때 기대대로 동작하는지 확인합니다.
+- **처리량 측정:** 작은 패킷이 쏟아지는 상황(DDoS)의 초당 패킷 수는 평소 트래픽과 다른 문제입니다. 우리 회선의 최대치로 미리 측정해 둡니다.
+- **기관 보안 정책 확인:** 인증 방화벽 앞에 보조 장비를 두는 것이 정책에 맞는지 먼저 확인합니다.
+
+**바깥 링크:** [republock](https://github.com/KREONET/republock) · [republock 동작 원리](https://github.com/KREONET/republock/blob/main/docs/how-it-works.ko.md) · [APNIC 할당 통계 파일](https://ftp.apnic.net/stats/apnic/) · [nftables wiki — Sets](https://wiki.nftables.org/wiki-nftables/index.php/Sets) · [nftables wiki — Netfilter hooks](https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks) · [fail2ban](https://github.com/fail2ban/fail2ban)
 
 ## 2.6 아웃바운드 화이트리스팅 — ufw default deny outgoing + squid
 

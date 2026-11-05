@@ -13,7 +13,9 @@
 | RHEL에서 설정은 맞는데 서비스가 안 뜬다 | [①의 SELinux 경고](labs/lab-01.md) | [Part 1 §1.4](01-image.md) |
 | ufw를 켰는데 도커 포트가 밖에서 열려 있다 | [③ ufw가 왜 뚫리지](labs/lab-03.md) | [Part 2](02-firewall.md) |
 | firewalld의 zone이 헷갈린다 | [④ firewalld trusted zone](labs/lab-04.md) | [Part 2](02-firewall.md) |
-| 로그에 모르는 IP가 계속 두드린다 | [⑤ 인바운드 선차단](labs/lab-05.md) | [Part 2](02-firewall.md) |
+| 로그에 모르는 IP가 계속 두드린다 | [⑤ 인바운드 선차단](labs/lab-05.md) | [Part 2 §2.5](02-firewall.md) |
+| 특정 국가에서 오는 접속을 막고 싶다 | [⑤의 국가별 IP 장부](labs/lab-05.md) | [Part 2 §2.5](02-firewall.md) |
+| 오래된 방화벽에 규칙 넣기가 너무 번거롭다 | [⑤의 현장 활용](labs/lab-05.md) | [Part 2 §2.5 투명 브릿지](02-firewall.md) |
 | 서버가 밖으로 무엇을 보내는지 모른다 / 유출이 걱정된다 | [⑥ egress 화이트리스팅](labs/lab-06.md) | [Part 2](02-firewall.md) |
 | 격리망 안의 VM을 밖에서 안전하게 쓰고 싶다 | [⑦ 방화벽·VPN](labs/lab-07.md) | [Part 3](03-network.md) |
 | ssh 키를 어떻게 배포하고, 접속 경로를 한 곳으로 모으나 | [⑧ 키 배포·bastion](labs/lab-08.md) | [Part 6](06-access.md) |
