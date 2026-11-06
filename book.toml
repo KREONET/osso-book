@@ -1,5 +1,5 @@
 [book]
-title = "오픈소스 서버·서비스 안전운영 실습 — 심화 핸드북"
+title = "오픈소스 안전운영 실습 — 서버와 서비스를 맡게 된 사람을 위한 손으로 익히는 보안"
 authors = ["KREONET 과학데이터교육센터"]
 language = "ko"
 src = "src"
