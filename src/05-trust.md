@@ -177,7 +177,6 @@ echo | openssl s_client -connect svc.demo.example:443 -servername svc.demo.examp
 - [ISRG 소개](https://www.abetterinternet.org/about/) · [후원 기관 목록](https://www.abetterinternet.org/sponsors/) — Let's Encrypt를 운영하는 비영리 단체와 그 후원자
 - [Caddy — Automatic HTTPS](https://caddyserver.com/docs/automatic-https) — 자동으로 하는 일의 전체 목록
 - [acme-dns 프로젝트](https://github.com/joohoi/acme-dns)
-- [Caddy — Automatic HTTPS](https://caddyserver.com/docs/automatic-https)
 
 ---
 
