@@ -1,14 +1,14 @@
-# 부록 A. 자산 카탈로그
+# 부록 A. 자산 카탈로그 {#appendix-a}
 
-이 과정에서 쓰고 만든 **자산(저장소·도구·문서)** 의 지도입니다. "이게 어디 있더라?"가 생길 때 여기서 태그로 찾으세요. 공개 저장소는 이름으로, 사내 서비스는 **역할만** 적었습니다.
+이 과정에서 쓰고 만든 **자산(저장소·도구·문서)** 의 지도입니다. 필요한 자산의 위치가 기억나지 않을 때 여기서 태그로 찾아보세요. 공개 저장소는 이름으로, 사내 서비스는 **역할만** 적었습니다.
 
-## 공개 저장소·도구
+## 공개 저장소·도구 {#a-public}
 
 | 태그 | 저장소/도구 | 역할 |
 |---|---|---|
-| sadp | [github.com/msjang/ostday26-sadp](https://github.com/msjang/ostday26-sadp) | SADP 4통제지점 · 섀도우 IT 양지화 |
+| sadp | [github.com/msjang/ostday26-sadp](https://github.com/msjang/ostday26-sadp) | SADP 4통제지점 · 섀도우 IT(조직이 파악하지 못한 채 운영되는 시스템) 양지화 |
 | republock | [github.com/KREONET/republock](https://github.com/KREONET/republock) | 평판 기반 nftables 방화벽(인바운드) |
-| caddy-xproxy | [github.com/kreonet/caddy-xproxy](https://github.com/kreonet/caddy-xproxy) | 리버스 프록시. `conf.d` opt-in, ACME 인증서, 봇 차단 |
+| caddy-xproxy | [github.com/kreonet/caddy-xproxy](https://github.com/kreonet/caddy-xproxy) | 리버스 프록시(요청을 받아 뒤쪽 서버에 전달하는 서버). `conf.d` opt-in(명시적으로 켠 사이트에만 적용), ACME 인증서, 봇 차단 |
 | saml-oidc | [github.com/KREONET/saml-oidc-test-sandbox](https://github.com/KREONET/saml-oidc-test-sandbox) | OIDC/SAML 연동 샌드박스 |
 | ufw-docker | [github.com/chaifeng/ufw-docker](https://github.com/chaifeng/ufw-docker) | Docker가 ufw를 우회하는 문제 해결 |
 | ohmyzsh | [github.com/kreonet/ohmyzsh](https://github.com/kreonet/ohmyzsh) | 서버 zsh 운영환경 · 자산 태그(TAG1/TAG2/HNUM) |
@@ -16,7 +16,7 @@
 | marimo | [github.com/marimo-team/marimo](https://github.com/marimo-team/marimo) | 반응형 파이썬 노트북 |
 | adr | [github.com/adr/madr](https://github.com/adr/madr) | MADR(결정 기록) 템플릿 → [부록 C](C-adr.md) |
 
-## 사내 서비스 (호스트명 생략)
+## 사내 서비스 (호스트명 생략) {#a-internal}
 
 | 태그 | 역할 |
 |---|---|
@@ -25,7 +25,7 @@
 | chat | 사내 LLM 백엔드(채팅 API) |
 | ns5 | 사내 DNS 서비스 |
 
-## 운영 문서 (이 책 안)
+## 운영 문서 (이 책 안) {#a-docs}
 
 | 태그 | 내용 | 이 책의 위치 |
 |---|---|---|

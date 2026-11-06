@@ -1,6 +1,6 @@
-## 실습⑩ 진짜 인증서 — HTTP-01 vs DNS-01 두 챌린지
+## 실습⑩ 공인 인증서 — HTTP-01과 DNS-01 챌린지 {#lab-10}
 
-🎯 **목표:** Let's Encrypt가 "이 도메인 네 것 맞아?"를 확인하는 **두 방식**을 몸으로 겪는다.
+🎯 **목표:** Let's Encrypt가 도메인 소유를 확인하는 **두 방식**을 직접 겪어 본다.
 
 🖥️ **랩:** 작업 VM(caddy). 참가자별 `eNN` 서브도메인 사전 위임됨.
 
@@ -17,9 +17,9 @@ export ACME_DNS_API=⟨https://⟨auth.acme-dns.example⟩⟩
 caddy run --config Caddyfile.dns01
 ```
 
-👀 **보이는 것:** A는 80포트 요청 로그 후 발급. B는 포트 안 열고도 `certificate obtained` — DNS에 TXT가 잠깐 생겼다 사라짐.
+👀 **보이는 것:** A는 80포트 요청 로그 후 발급. B는 포트를 열지 않고도 `certificate obtained`. DNS에 TXT 레코드가 잠깐 생겼다 사라짐.
 
-💡 **느낄 것:** HTTP-01은 "문을 열어 보여주기", DNS-01은 "등기부로 증명하기". **내부망·와일드카드엔 DNS-01**. 그리고 `_acme-challenge`만 위임하면 **존 전체를 안 주고도** 각자 발급받는다(최소권한).
+💡 **느낄 것:** HTTP-01은 문을 열어 보여 주는 방식, DNS-01은 등기부로 증명하는 방식이다. **내부망·와일드카드 인증서에는 DNS-01**을 쓴다. 또 `_acme-challenge`만 위임하면 존(zone, 도메인의 DNS 관리 단위) 전체 권한을 주지 않고도 각자 발급받을 수 있다(최소 권한).
 
 ---
 

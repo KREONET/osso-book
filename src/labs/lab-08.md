@@ -1,4 +1,4 @@
-### ⑧ 준비 — 내 열쇠 만들고 공개키 뿌리기 (bastion에 들어가려면 먼저 이게 있어야)
+### ⑧ 준비 — SSH 키 만들기와 공개키 배포 {#lab-08-prep}
 
 ⌨️ **해보기**
 ```bash
@@ -21,7 +21,7 @@ ssh-import-id gh:⟨myid⟩
 ssh-import-id lp:⟨myid⟩
 ```
 
-> 🔑 **공개키는 어디서 올리나** — 위 URL은 내가 먼저 공개키를 계정에 등록해 둬야 나온다. `~/.ssh/id_ed25519.pub`의 내용(한 줄)을 붙여 넣는다.
+> 🔑 **공개키는 어디서 올리나** — 위 URL은 먼저 공개키를 계정에 등록해 두어야 내용이 나온다. `~/.ssh/id_ed25519.pub`의 내용(한 줄)을 붙여 넣는다.
 
 > - GitHub: <https://github.com/settings/keys> → *New SSH key* ([GitHub 안내](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account))
 
@@ -31,15 +31,15 @@ ssh-import-id lp:⟨myid⟩
 
 > 개인키(`id_ed25519`, `.pub` 없는 쪽)는 절대 올리지 않는다.
 
-👀 **보이는 것:** 공개키가 URL로 공개돼 있고, `ssh-import-id` 한 줄이면 서버에 등록됨. 이제 비번 없이 **키로** 로그인.
+👀 **보이는 것:** 공개키가 URL로 공개돼 있고, `ssh-import-id` 한 줄이면 서버에 등록됨. 이제 비밀번호 없이 **키로** 로그인.
 
-💡 **키 타입 ≠ 지문 해시:** 키는 `ed25519`(종류), 지문은 `SHA256:…`(그 키를 요약한 해시) — 서로 다른 층. "알고리즘이 sha256/ed…"는 여기서 갈린다(옛 MD5 hex 지문은 이제 안 씀).
+💡 **키 타입 ≠ 지문 해시:** 키는 `ed25519`(종류), 지문은 `SHA256:…`(그 키를 요약한 해시)로, 서로 다른 층이다. "알고리즘이 sha256인가 ed25519인가" 하는 혼동은 이 구분으로 풀린다(옛 MD5 hex 지문은 이제 쓰지 않는다).
 
-💡 **편하지만 신뢰 사슬이 생긴다:** 공개 URL에서 키를 당긴다 = 두 가지를 믿는 것. ① 그 **계정** — GitHub·Launchpad 계정이 털리면 공격자의 키가 추가될 수 있다. ② 그 공개 도메인(`github.com`)의 인증서를 발급한 **상위 CA** — 정확히는 내 OS가 믿는 루트 CA 목록. 이 사슬이 깨지면 가짜 `github.com`이 가짜 키를 내줄 수 있다(⑪에서 우리가 직접 CA가 되어 본다). 그래서 **① 이미지 만들 때** `ssh-import-id`를 **firstboot**로 심어두면(ohmyzsh처럼 네트워크 필요) 장비마다 손 안 대고 동일한 접근권 — 운영 편의이자 **감사 대상**.
+💡 **편하지만 신뢰 사슬이 생긴다:** 공개 URL에서 키를 가져온다는 것은 두 가지를 믿는다는 뜻이다. ① 그 **계정**: GitHub·Launchpad 계정이 탈취되면 공격자의 키가 추가될 수 있다. ② 그 공개 도메인(`github.com`)의 인증서를 발급한 **상위 CA**(인증기관), 정확히는 내 OS가 믿는 루트 CA 목록. 이 사슬이 깨지면 가짜 `github.com`이 가짜 키를 내줄 수 있다(⑪에서 직접 CA가 되어 본다). ①에서 이미지를 만들 때 `ssh-import-id`를 firstboot로 넣어 두면(ohmyzsh처럼 네트워크 필요) 장비마다 손대지 않아도 같은 접근 권한이 생긴다. 운영에는 편리하지만 그만큼 **감사 대상**이다.
 
-## 실습⑧ 망간접점 통제 — 나가는 길 조이기 + 들어오는 문 하나로
+## 실습⑧ 망 간 접점 통제 — egress 제한과 단일 진입점 {#lab-08}
 
-🎯 **목표:** 격리망의 **egress를 기본 차단**하고 필요할 때만 토글, 그리고 **듀얼홈 bastion**을 유일한 입구로.
+🎯 **목표:** 격리망의 **egress를 기본 차단**하고 필요할 때만 토글, 그리고 **듀얼홈 bastion**(두 망에 모두 연결되어 관리 접속을 중계하는 서버)을 유일한 입구로 삼는다.
 
 🖥️ **랩:** 방화벽 VM + 듀얼홈 bastion VM(Rocky, vmbr0+vmbr1) + 격리 LAN VM. (키·공개키는 위 "⑧ 준비"에서 완료)
 
@@ -56,7 +56,7 @@ ssh-import-id lp:⟨myid⟩
 
 ⌨️ **(B) 듀얼홈 bastion — 외부에서 격리 VM으로 가는 유일한 문**
 
-먼저 **bastion 쪽**에서 점프를 허용하는지 본다. `ProxyJump`는 bastion에 셸로 들어가는 게 아니라 bastion의 sshd에게 "이 주소로 TCP를 이어 줘"라고 부탁하는 것이다. 그래서 bastion sshd의 **TCP 포워딩이 허용**돼 있어야 한다.
+먼저 **bastion 쪽**에서 점프를 허용하는지 본다. `ProxyJump`는 bastion에 셸로 들어가지 않고, bastion의 sshd에게 지정한 주소로 TCP 연결을 이어 달라고 요청한다. 그래서 bastion sshd의 **TCP 포워딩이 허용**되어 있어야 한다.
 ```bash
 # (bastion에서) 지금 실제로 적용되는 값 — jump 계정 기준으로
 sudo sshd -T -C user=jump,host=x,addr=⟨내 PC IP⟩ | grep -Ei 'allowtcpforwarding|disableforwarding|permitopen'
@@ -71,14 +71,14 @@ EOF
 sudo sshd -t && sudo systemctl reload sshd
 ```
 
-> 기본값은 `AllowTcpForwarding yes`라 갓 설치한 서버는 그냥 된다. 문제는 **보안 강화 가이드대로 조인 서버**다. 점검 항목에 따라 `AllowTcpForwarding no`나 `DisableForwarding yes`가 들어가 있으면 점프가 이렇게 실패한다.
+> 기본값이 `AllowTcpForwarding yes`이므로 갓 설치한 서버에서는 별도 설정 없이 된다. 문제는 **보안 강화 가이드에 따라 설정을 조인 서버**다. 점검 항목에 따라 `AllowTcpForwarding no`나 `DisableForwarding yes`가 들어가 있으면 점프가 이렇게 실패한다.
 >
 > ```text
 > channel 0: open failed: administratively prohibited: open failed
 > stdio forwarding failed
 > ```
 >
-> 이 메시지를 보면 내 PC가 아니라 **bastion의 sshd 설정**을 본다. 전체를 다시 열지 말고 위처럼 `Match`로 점프 계정에만 연다.
+> 이 메시지가 나오면 내 PC가 아니라 **bastion의 sshd 설정**을 확인한다. 전체를 다시 열지 말고 위처럼 `Match`로 점프 계정에만 연다.
 
 그다음 **내 쪽** 설정:
 ```bash
@@ -107,18 +107,18 @@ ssh -G lanvm | grep -E '^(hostname|user|proxyjump) '
 ssh lanvm hostname
 ```
 
-> 💡 `cat >> ~/.ssh/config`로 덧붙이지 않고 `conf.d/` 파일 하나로 나눈 이유: ①의 드롭인과 같다. 이 실습이 끝나면 파일 하나만 지우면 깨끗하고, 팀이라면 이 파일을 나눠 모두가 `ssh lanvm`이라는 **같은 이름**으로 들어간다. 점 파일과 팀 공유는 [Part 1 §1.3](../01-image.md)에서.
+> 💡 `cat >> ~/.ssh/config`로 덧붙이지 않고 `conf.d/` 파일 하나로 나눈 이유: ①의 드롭인과 같다. 실습이 끝나면 파일 하나만 지우면 정리되고, 팀이라면 이 파일을 나눠 모두가 `ssh lanvm`이라는 **같은 이름**으로 들어간다. 점 파일(dotfile, 이름이 `.`으로 시작하는 개인 설정 파일)과 팀 공유는 [Part 1 §1.3](../01-image.md)에서 다룬다.
 
 👀 **보이는 것:** `sshd -T`에 `allowtcpforwarding yes`·`permitopen *:22`. 격리 VM에 직접 `ssh`는 실패(경로 없음) → `ssh lanvm`은 bastion을 거쳐 성공. (해 보고 싶다면: `10-jump.conf`에서 `yes`를 `no`로 바꾸고 reload → 같은 명령이 `administratively prohibited`로 실패.)
 
-💡 **느낄 것:** 격리망을 쓰려면 **나가는 길**과 **들어오는 문**을 각각 통제한다. egress는 평소 잠그고 필요할 때만 토글(폐쇄망 조이기), 진입은 bastion **한 곳**으로 좁힌다(망간접점). 이 둘이 "격리망을 두되 안전하게 쓰는" 실체. ⑥(호스트 하나)에서 ⑧(망 전체 경계)로 사고가 올라간다.
+💡 **느낄 것:** 격리망을 쓰려면 **나가는 길**과 **들어오는 문**을 각각 통제한다. egress는 평소 잠그고 필요할 때만 토글(폐쇄망 조이기), 진입은 bastion **한 곳**으로 좁힌다(망 간 접점). 격리망을 두면서도 안전하게 쓰는 방법은 결국 이 두 가지다. ⑥(호스트 하나)에서 ⑧(망 전체 경계)로 생각의 범위가 넓어진다.
 
 ---
 
 🔀 **갈림길** — 다음엔 어디로?
 
 - egress를 AI 고도에서 → [⑭ AI 배포 캡스톤](lab-14.md)
-- 서비스를 띄워 보는 2일차로 → [⑨ compose](lab-09.md)
+- 서비스를 실행해 보는 2일차로 → [⑨ compose](lab-09.md)
 - ssh 키·bastion·접근 통제 → [Part 6](../06-access.md)
 - 듀얼홈·격리망의 원리 → [Part 3](../03-network.md)
 - 길을 잃었다면 → [🗺️ 지도](../map.md)

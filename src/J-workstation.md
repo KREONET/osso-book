@@ -1,8 +1,8 @@
-# 부록 J. 내 PC 작업 환경 — 터미널·SSH 클라이언트·셸
+# 부록 J. 내 PC 작업 환경 — 터미널·SSH 클라이언트·셸 {#appendix-j}
 
 **멘탈모델:** 서버 작업은 **내 PC의 터미널 창 → 그 안의 셸 → ssh → 서버의 셸**로 이어지는 사슬입니다. 사슬의 앞쪽 세 고리(터미널·셸·SSH 클라이언트)는 내 PC에 있고, 사람마다 OS가 달라서 가장 많이 어긋나는 곳도 여기입니다.
 
-과학자·연구자·학생과 함께 일하다 보면 모두가 다른 환경을 씁니다. 윈도우·맥·리눅스가 섞이고, 같은 윈도우라도 어떤 사람은 PowerShell, 어떤 사람은 WSL2를 씁니다. 무언가를 설명하려면 먼저 "지금 어디서 무엇을 치고 있는지"부터 맞춰야 합니다. 이 부록은 가장 널리 쓰이는 세 OS(윈도우·맥·리눅스)에서 이 사슬을 맞추는 기본 설정을 모았습니다. 도구를 *설치*하는 방법(Homebrew·WinGet·conda)은 [부록 G](G-packages.md)에 있으니, 여기서는 그 도구로 **무엇을** 깔지만 다룹니다.
+과학자·연구자·학생과 함께 일하다 보면 모두가 다른 환경을 씁니다. 윈도우·맥·리눅스가 섞이고, 같은 윈도우라도 어떤 사람은 PowerShell, 어떤 사람은 WSL2를 씁니다. 무언가를 설명하려면 먼저 상대가 지금 어디에서 무엇을 입력하고 있는지부터 확인해야 합니다. 이 부록은 가장 널리 쓰이는 세 OS(윈도우·맥·리눅스)에서 이 사슬을 맞추는 기본 설정을 모았습니다. 도구를 *설치*하는 방법(Homebrew·WinGet·conda)은 [부록 G](G-packages.md)에 있으니, 여기서는 그 도구로 무엇을 설치할지만 다룹니다.
 
 ```mermaid
 flowchart LR
@@ -13,9 +13,9 @@ flowchart LR
   C -- "암호화된 연결<br/>(키 인증)" --> R["서버의 셸<br/>(zsh/bash)"]
 ```
 
-## J.1 셸 — 명령을 받아 주는 프로그램
+## J.1 셸 — 명령을 해석하는 프로그램 {#j-1-shell}
 
-셸은 내가 친 명령을 해석해 실행하는 프로그램입니다. OS마다 기본으로 들어 있는 셸이 다릅니다.
+셸은 내가 입력한 명령을 해석해 실행하는 프로그램입니다. OS마다 기본으로 들어 있는 셸이 다릅니다.
 
 | 셸 | 맥 | 리눅스 | 윈도우 | 윈도우 WSL2 |
 | --- | --- | --- | --- | --- |
@@ -43,11 +43,11 @@ sudo dnf install -y zsh
 echo $SHELL
 ```
 
-(교재 밖 내용: `wsl --install` 한 줄 설치는 윈도우 10 2004 이상·윈도우 11에서 됩니다. macOS의 기본 셸은 10.15 Catalina부터 zsh입니다.)
+(교재 밖 내용: `wsl --install` 한 줄 설치는 윈도우 10 2004 이상·윈도우 11에서 가능합니다. macOS의 기본 셸은 10.15 Catalina부터 zsh입니다.)
 
-## J.2 터미널 에뮬레이터 — 셸을 띄우는 창
+## J.2 터미널 에뮬레이터 — 셸을 실행하는 창 {#j-2-terminal}
 
-터미널 에뮬레이터는 GUI 창 안에서 셸 같은 CLI 프로그램을 실행해 주는 프로그램입니다. 셸과는 다른 층입니다. OS와 함께 깔리는 기본 터미널을 써도 되고, 취향에 따라 다른 것을 골라도 됩니다.
+터미널 에뮬레이터는 GUI 창 안에서 셸 같은 CLI 프로그램을 실행해 주는 프로그램입니다. 셸과는 다른 층입니다. OS와 함께 설치되는 기본 터미널을 써도 되고, 취향에 따라 다른 것을 골라도 됩니다.
 
 | 이름 | 윈도우 | 리눅스 | macOS |
 | --- | --- | --- | --- |
@@ -64,11 +64,11 @@ echo $SHELL
 | Alacritty | O | O | O |
 | Tabby (옛 이름 Terminus) | O | O | O |
 
-고르는 기준은 단순합니다. 처음이라면 OS 기본(Windows Terminal·Terminal.app·GNOME Terminal)으로 시작하고, 창 분할·검색·글꼴이 아쉬워지면 바꿉니다. 터미널을 바꿔도 셸과 그 설정 파일(`~/.zshrc`)은 그대로 따라옵니다.
+선택 기준은 단순합니다. 처음이라면 OS 기본(Windows Terminal·Terminal.app·GNOME Terminal)으로 시작하고, 창 분할·검색·글꼴이 아쉬워지면 바꿉니다. 터미널을 바꿔도 셸과 그 설정 파일(`~/.zshrc`)은 그대로 따라옵니다.
 
-## J.3 윈도우에서 유닉스 셸을 쓰는 여러 길
+## J.3 윈도우에서 유닉스 셸을 쓰는 방법 {#j-3-windows}
 
-WSL2가 나오기 전부터 윈도우에서 bash를 쓰려는 시도는 여럿 있었습니다. 지금도 다른 프로그램에 딸려 깔리는 경우가 많아서, 내 PC에 "bash가 여러 개" 있는 일이 흔합니다. 어느 bash가 어디서 왔는지 알아 두면 경로·패키지가 꼬였을 때 덜 헤맵니다.
+WSL2가 나오기 전부터 윈도우에서 bash를 쓰려는 시도는 여럿 있었습니다. 지금도 다른 프로그램과 함께 설치되는 경우가 많아서 한 PC에 bash가 여러 개 있는 일이 흔합니다. 어느 bash가 어디서 왔는지 알아 두면 경로·패키지가 꼬였을 때 원인을 찾기 쉽습니다.
 
 | 항목 | 처음 나온 해 | 설명 | 기본 셸 | 패키지 관리자 |
 | --- | --- | --- | --- | --- |
@@ -76,14 +76,14 @@ WSL2가 나오기 전부터 윈도우에서 bash를 쓰려는 시도는 여럿 �
 | MinGW | 1998 | Minimalist GNU for Windows. 윈도우용 GNU 개발 환경(GCC, GNU Binutils), 윈도우 API 사용 가능 | 없음 | |
 | MinGW-w64 | 2007 | MinGW를 64비트용으로 갈라 나온 것(fork) | 없음 | |
 | MSYS2 | 2013 | MinGW 계열에서 갈라 나온 환경 | bash | pacman |
-| MobaXterm | | 터미널 에뮬레이터. Cygwin 기반 bash가 함께 깔림 | bash | MobApt (apt-get) |
-| Git for Windows | | MinGW-w64 기반 도구가 함께 깔림(흔히 "Git Bash") | bash | |
+| MobaXterm | | 터미널 에뮬레이터. Cygwin 기반 bash가 함께 설치됨 | bash | MobApt (apt-get) |
+| Git for Windows | | MinGW-w64 기반 도구가 함께 설치됨(흔히 "Git Bash") | bash | |
 
-Cygwin이나 MSYS2 위에 zsh와 oh-my-zsh(J.6)를 올려 쓸 수도 있습니다. 다만 새로 시작한다면 진짜 리눅스 커널 위에서 도는 **WSL2**가 이 책의 명령과 가장 잘 맞습니다.
+Cygwin이나 MSYS2 위에 zsh와 oh-my-zsh(J.6)를 올려 쓸 수도 있습니다. 다만 새로 시작한다면 실제 리눅스 커널 위에서 동작하는 **WSL2**가 이 책의 명령과 가장 잘 맞습니다.
 
-## J.4 SSH 키 만들기
+## J.4 SSH 키 만들기 {#j-4-ssh-keys}
 
-키를 만드는 명령과 그 의미(ed25519 vs rsa, 키 타입과 지문 해시의 구분, 패스프레이즈)는 [Part 6 §6.1](06-access.md)에, 만든 공개키를 서버에 뿌리는 방법은 [실습⑧ 준비](labs/lab-08.md)와 [§6.2](06-access.md)에 있습니다. 여기서는 OS마다 다른 부분만 짚습니다. (이 절의 OS별 세부는 교재 밖 내용을 보탠 것입니다.)
+키를 만드는 명령과 그 의미(ed25519 vs rsa, 키 타입과 지문 해시의 구분, 패스프레이즈)는 [Part 6 §6.1](06-access.md)에, 만든 공개키를 서버에 배포하는 방법은 [실습⑧ 준비](labs/lab-08.md)와 [§6.2](06-access.md)에 있습니다. 여기서는 OS마다 다른 부분만 짚습니다. (이 절의 OS별 세부는 교재 밖 내용을 보탠 것입니다.)
 
 ```bash
 # 세 OS 모두 같은 명령 — 윈도우는 PowerShell에서도 그대로 된다 (OpenSSH 클라이언트 내장)
@@ -92,7 +92,7 @@ ssh-keygen -t ed25519 -C "⟨me@example.org⟩"
 ssh-keygen -lf ~/.ssh/id_ed25519.pub
 ```
 
-| | 키가 저장되는 곳 | 패스프레이즈를 매번 안 치려면 |
+| | 키가 저장되는 곳 | 패스프레이즈를 매번 입력하지 않으려면 |
 | --- | --- | --- |
 | 리눅스·WSL2 | `~/.ssh/` | `ssh-agent` + `ssh-add` |
 | 맥 | `~/.ssh/` | `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` (키체인에 기억) |
@@ -114,9 +114,9 @@ chmod 600 ~/.ssh/id_ed25519
 
 ⚠️ **WSL2와 윈도우는 홈 디렉터리가 다릅니다.** WSL2 안의 `~/.ssh`와 윈도우의 `C:\Users\⟨사용자⟩\.ssh`는 서로 다른 폴더입니다. 같은 키를 두 곳에 복사해 두기보다, 한쪽에서만 ssh를 쓰는 습관이 사고(키 사본이 여기저기 남는 일)를 줄입니다.
 
-## J.5 SSH 클라이언트 — 무엇으로 접속하나
+## J.5 SSH 클라이언트 — 접속 프로그램 고르기 {#j-5-ssh-clients}
 
-기본은 **OpenSSH 클라이언트**, 곧 터미널에서 `ssh`라고 치는 그 명령입니다. 세 OS 모두에 들어 있고, 이 책의 `~/.ssh/config`·`ProxyJump`·`Include`([§1.3](01-image.md), [§3.5](03-network.md))가 그대로 통합니다. 그 위에 GUI 클라이언트를 고를 수도 있습니다.
+기본은 **OpenSSH 클라이언트**, 곧 터미널에서 입력하는 `ssh` 명령입니다. 세 OS 모두에 들어 있고, 이 책의 `~/.ssh/config`·`ProxyJump`·`Include`([§1.3](01-image.md), [§3.5](03-network.md))가 그대로 적용됩니다. 그 위에 GUI 클라이언트를 고를 수도 있습니다.
 
 | 클라이언트 | 라이선스 | 맥 | 윈도우 | 리눅스 | 스마트폰 | 비고 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -130,7 +130,7 @@ chmod 600 ~/.ssh/id_ed25519
 | SecureCRT | 상용(유료) | O | O | O | | |
 | Xshell | 개인 무료·기업 유료 | | O | | | |
 
-라이선스 칸이 왜 중요한지는 [부록 B](B-licenses.md)와 [§1.8](01-image.md)의 Anaconda 이야기와 같습니다. "개인 무료"인 도구를 기관 PC에 깔면 그 자체로 라이선스 위반이 될 수 있습니다.
+라이선스 칸이 왜 중요한지는 [부록 B](B-licenses.md)와 [§1.8](01-image.md)의 Anaconda 이야기와 같습니다. "개인 무료"인 도구를 기관 PC에 설치하면 그 자체로 라이선스 위반이 될 수 있습니다.
 
 설치는 [부록 G](G-packages.md)의 패키지 관리자로 합니다.
 
@@ -156,30 +156,30 @@ winget install -e --id mRemoteNG.mRemoteNG
 
 스마트폰용 Termius·PortX는 구글 플레이·앱스토어에서 받습니다.
 
-⚠️ **GUI 클라이언트에 키와 비밀번호를 "저장"하는 기능**은 편하지만, 그 앱(과 동기화 기능이 있다면 그 회사의 클라우드)이 내 열쇠를 들고 있게 됩니다. 저장 위치와 암호화 방식을 확인하고, 비밀번호 저장은 끄고 키 인증만 쓰는 쪽을 권합니다([Part 6](06-access.md)).
+⚠️ **GUI 클라이언트에 키와 비밀번호를 "저장"하는 기능**은 편하지만, 그 앱(과 동기화 기능이 있다면 그 회사의 클라우드)이 내 열쇠를 보관하게 됩니다. 저장 위치와 암호화 방식을 확인하고, 비밀번호 저장은 끄고 키 인증만 쓰는 쪽을 권합니다([Part 6](06-access.md)).
 
-## J.6 셸 꾸미기 — oh-my-zsh
+## J.6 셸 환경 설정 — oh-my-zsh {#j-6-oh-my-zsh}
 
-[oh-my-zsh](https://ohmyz.sh)는 zsh 설정을 관리해 주는 도우미입니다. 명령 자동 추천(지난 기록에서), 문법 강조, git 브랜치 표시 같은 기능을 테마와 플러그인으로 제공합니다. 테마 목록은 [ohmyzsh 위키의 Themes](https://github.com/ohmyzsh/ohmyzsh/wiki/Themes)에서 고릅니다. 설치 방법은 두 가지입니다.
+[oh-my-zsh](https://ohmyz.sh)는 zsh 설정을 관리하는 도구입니다. 명령 자동 추천(지난 기록에서), 문법 강조, git 브랜치 표시 같은 기능을 테마와 플러그인으로 제공합니다. 테마 목록은 [ohmyzsh 위키의 Themes](https://github.com/ohmyzsh/ohmyzsh/wiki/Themes)에서 고릅니다. 설치 방법은 두 가지입니다.
 
 ```mermaid
 flowchart TB
   Q{"이 장비를 누가 쓰나?"}
-  Q -- "나 혼자 (내 노트북)" --> A["나 혼자 설치<br/>~/.oh-my-zsh"]
+  Q -- "나 혼자 (내 노트북)" --> A["사용자별 설치<br/>~/.oh-my-zsh"]
   Q -- "여러 사람 (공용 서버)" --> B["시스템 전역 설치<br/>/oh-my-zsh + /etc/skel"]
   A --> P["powerlevel10k 같은<br/>화려한 테마 OK"]
   B --> N["NerdFont가 필요 없는<br/>기본 글꼴 테마만"]
 ```
 
-### 나 혼자 설치 — `$HOME/.oh-my-zsh`
+### 사용자별 설치 — `$HOME/.oh-my-zsh` {#j-6-user}
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-⚠️ 인터넷에서 받은 스크립트를 바로 셸에 넘기는 형태입니다. 공식 저장소 주소인지 한 번 더 보고, 불안하면 먼저 파일로 받아(`curl -fsSL ⟨URL⟩ -o install.sh`) 읽어 본 뒤 실행합니다.
+⚠️ 인터넷에서 받은 스크립트를 바로 셸에 넘기는 형태입니다. 공식 저장소 주소인지 한 번 더 확인하고, 미심쩍으면 먼저 파일로 받아(`curl -fsSL ⟨URL⟩ -o install.sh`) 읽어 본 뒤 실행합니다.
 
-**맥에서 나 혼자 쓴다면 powerlevel10k.** [powerlevel10k](https://github.com/romkatv/powerlevel10k)는 zsh용 테마로, 매우 빠르고 정보가 풍부합니다. 다만 저장소 첫머리에 밝혀 둔 대로 지금은 **지원이 매우 제한된** 상태입니다(새 기능 없음, 대부분의 버그는 고치지 않음, 도움 요청에 답하지 않음). 지금 그대로 잘 동작하지만, 문제가 생기면 스스로 해결하거나 다른 테마로 옮겨야 한다는 뜻입니다.
+**맥에서 나 혼자 쓴다면 powerlevel10k.** [powerlevel10k](https://github.com/romkatv/powerlevel10k)는 zsh용 테마로, 매우 빠르고 정보가 풍부합니다. 다만 저장소 첫머리에 밝혀 둔 대로 지금은 **지원이 매우 제한된** 상태입니다(새 기능 없음, 대부분의 버그는 고치지 않음, 도움 요청에 답하지 않음). 현재로서는 잘 동작하지만, 문제가 생기면 스스로 해결하거나 다른 테마로 옮겨야 한다는 뜻입니다.
 
 ```bash
 # 내 oh-my-zsh의 custom 테마 폴더에 받는다
@@ -190,9 +190,9 @@ omz theme set powerlevel10k/powerlevel10k
 
 ⚠️ **powerlevel10k는 여러 사람이 쓰는 서버에 설치하지 않습니다.** 아이콘·특수문자를 표시하려고 NerdFont라는 글꼴을 쓰는데, 서버의 프롬프트는 *접속한 사람의 PC 글꼴*로 그려지므로 이 글꼴이 없는 PC에서는 프롬프트가 깨져 보입니다. 그래서 위 갈림길에서 "나 혼자"일 때만 권합니다.
 
-### 시스템 전역 설치 — `/oh-my-zsh`
+### 시스템 전역 설치 — `/oh-my-zsh` {#j-6-system}
 
-공용 서버에서는 사용자마다 따로 깔지 않고 한 곳(`/oh-my-zsh`)에 한 번 깔아 모두가 같이 씁니다. 새로 만드는 계정이 처음부터 zsh와 같은 설정을 갖게 하는 것이 목표입니다. [§1.3](01-image.md)에서 말한 **조직 공용 점 파일**의 가장 단순한 형태입니다. 아래 절차를 스크립트로 묶은 것이 [실습①](labs/lab-01.md)에서 심는 [KREONET/ohmyzsh](https://github.com/KREONET/ohmyzsh)이고, 그쪽은 여기에 [§1.7](01-image.md)의 자산 태그 표시까지 얹었습니다. 손으로 따라 하면 무엇이 어디에 놓이는지 보입니다.
+공용 서버에서는 사용자마다 따로 설치하지 않고 한 곳(`/oh-my-zsh`)에 한 번 설치해 모두가 함께 씁니다. 새로 만드는 계정이 처음부터 zsh와 같은 설정을 갖게 하는 것이 목표입니다. [§1.3](01-image.md)에서 말한 **조직 공용 점 파일**(dotfile, `.zshrc`처럼 이름이 점으로 시작하는 사용자 설정 파일)의 가장 단순한 형태입니다. 아래 절차를 스크립트로 묶은 것이 [실습①](labs/lab-01.md)에서 설치하는 [KREONET/ohmyzsh](https://github.com/KREONET/ohmyzsh)이고, 그쪽은 여기에 [§1.7](01-image.md)의 자산 태그 표시까지 더했습니다. 직접 따라 해 보면 무엇이 어디에 놓이는지 확인할 수 있습니다.
 
 ```bash
 # 이하 모두 root로 실행
@@ -213,7 +213,7 @@ git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM
 git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting $ZSH_CUSTOM/plugins/zsh-syntax-highlighting
 ```
 
-이제 사용자에게 나눠 줄 `.zshrc` 원본(템플릿)을 고칩니다. 본체 위치를 `/oh-my-zsh`로, 테마를 `dallas`로, 플러그인을 위의 둘로 바꾸고, 자동 업데이트는 끕니다(공용 본체를 사용자 셸이 제멋대로 갱신하지 않게).
+이제 사용자에게 나눠 줄 `.zshrc` 원본(템플릿)을 고칩니다. 본체 위치를 `/oh-my-zsh`로, 테마를 `dallas`로, 플러그인을 위의 둘로 바꾸고, 자동 업데이트는 끕니다(사용자 셸이 공용 본체를 임의로 갱신하지 않도록).
 
 ```bash
 ZSHRC=$ZSH/templates/zshrc.zsh-template
@@ -242,7 +242,7 @@ cp /oh-my-zsh/templates/zshrc.zsh-template /etc/skel/.zshrc
 [ -x /bin/zsh ] && sed -i 's#^SHELL=.*#SHELL=/bin/zsh#' /etc/default/useradd
 ```
 
-**이미 있는 계정(root 포함)은 직접.**
+**이미 있는 계정(root 포함)은 직접 바꿉니다.**
 
 ```
 # cp /oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
@@ -254,16 +254,16 @@ New shell [/bin/bash]
 Shell changed.
 ```
 
-**bash 기록 이어받기(필요하면).** zsh-autosuggestions는 `~/.zsh_history`에서 명령을 추천합니다. bash를 쓰던 계정이라면 기록을 복사해 두면 첫날부터 추천을 받습니다.
+**bash 기록 이어받기(필요하면).** zsh-autosuggestions는 `~/.zsh_history`에서 명령을 추천합니다. bash를 쓰던 계정이라면 기록을 복사해 두어 첫날부터 추천을 받을 수 있습니다.
 
 ```bash
 # 원본은 남겨 두고 복사한다
 cp ~/.bash_history ~/.zsh_history
 ```
 
-⚠️ **공용 본체는 root만 고칩니다.** `/oh-my-zsh`는 모든 사용자의 셸이 읽어 들이는 코드입니다. 일반 사용자가 쓸 수 있는 권한이면 한 사람이 모두의 셸에 코드를 심을 수 있습니다. `ls -ld /oh-my-zsh`로 소유자가 root이고 그룹·기타에 쓰기 권한이 없는지 확인합니다.
+⚠️ **공용 본체는 root만 고칩니다.** `/oh-my-zsh`는 모든 사용자의 셸이 읽어 들이는 코드입니다. 일반 사용자가 쓸 수 있는 권한이면 한 사람이 모두의 셸에 코드를 넣을 수 있습니다. `ls -ld /oh-my-zsh`로 소유자가 root이고 그룹·기타에 쓰기 권한이 없는지 확인합니다.
 
-## J.7 한 장 요약
+## J.7 한 장 요약 {#j-7-summary}
 
 | 고리 | 윈도우 | 맥 | 리눅스 |
 | --- | --- | --- | --- |

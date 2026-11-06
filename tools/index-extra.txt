@@ -1,0 +1,44 @@
+# 찾아보기에 더할 표제어. 용어집(F-glossary.md)에 없는 것, 또는 다른 표기를 함께 찾고 싶은 것.
+# 형식:  표제어 | 검색어1, 검색어2, ...   (검색어를 비우면 표제어로 찾는다)
+드롭인 | 드롭인, drop-in, sshd_config.d, sudoers.d
+골든 이미지 | 골든 이미지, 골든이미지
+멀티홈드 | 멀티홈드, multi-homed, 듀얼홈
+bastion | bastion, 점프 호스트, 점프호스트
+egress | egress, 아웃바운드, 나가는 길
+링크드 클론 | 링크드 클론, Linked Clone, backing file, 백킹 파일
+qcow2 | qcow2
+cloud-init | cloud-init
+machine-id | machine-id
+growpart | growpart
+virt-customize | virt-customize
+virt-sysprep | virt-sysprep
+Clonezilla | Clonezilla
+Ventoy | Ventoy
+ufw | ufw
+firewalld | firewalld
+nftables | nftables, nft
+iptables | iptables
+squid | squid, Squid
+WireGuard | WireGuard, wg-quick
+OpenVPN | OpenVPN, openvpn
+docker compose | docker compose, compose.yaml
+.env | .env
+mTLS | mTLS
+OIDC | OIDC, OpenID Connect
+forward-auth | forward_auth, forward-auth, auth_request
+ADR | ADR
+SBOM | SBOM
+프롬프트 인젝션 | 프롬프트 인젝션, prompt injection
+위임 사다리 | 위임 사다리
+ops-ro | ops-ro
+자산 태그 | 자산 태그, asset tag, /etc/tag1
+FRU | FRU
+IPMI | IPMI, BMC
+dotfile | dotfile, 점 파일, dotfiles
+Homebrew | Homebrew, brew, Brewfile
+WinGet | WinGet, winget
+Proxmox VE | Proxmox VE, PVE
+네임스페이스 | 네임스페이스, namespace
+제로 트러스트 | 제로 트러스트, Zero Trust
+DPI | DPI
+MTU | MTU, 점보 프레임

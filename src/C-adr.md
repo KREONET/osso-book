@@ -1,8 +1,8 @@
-# 부록 C. ADR 템플릿 (MADR)
+# 부록 C. ADR 템플릿 (MADR) {#appendix-c}
 
-**ADR(Architecture Decision Record)** 은 "무엇을, 왜 그렇게 결정했나"를 짧게 남기는 기록입니다. 담당자가 바뀌어도 맥락이 남습니다. 템플릿 원본은 [adr/madr](https://github.com/adr/madr).
+**ADR(Architecture Decision Record)** 은 "무엇을, 왜 그렇게 결정했나"를 짧게 남기는 기록입니다. 담당자가 바뀌어도 결정의 맥락이 남습니다. 이 부록은 MADR(Markdown Architecture Decision Records, 마크다운으로 쓰는 ADR 양식)을 따르며, 템플릿 원본은 [adr/madr](https://github.com/adr/madr)에 있습니다.
 
-## 템플릿 (복사해서 사용)
+## 템플릿 (복사해서 사용) {#c-template}
 
 ````markdown
 # ⟨짧은 제목: 결정 내용을 동사구로⟩
@@ -40,14 +40,14 @@
 ⟨결정이 지켜지는지 어떻게 확인하나? 예: 분기마다 점검, CI 검사, 감사 로그⟩
 ````
 
-## 쓰는 법
+## 쓰는 법 {#c-how-to}
 
 1. 결정을 내린 **그날** 쓴다. 나중에 쓰면 이유를 잊는다.
 2. 한 ADR에 결정은 **하나**. 길어야 한 화면.
 3. 고친 결정은 지우지 말고 새 ADR을 쓰고 옛 ADR 상태를 "대체됨"으로 바꾼다.
-4. 대안은 최소 둘. "안 한 것"이 기록의 절반이다.
+4. 대안은 최소 둘. 선택하지 않은 것이 기록의 절반이다.
 
-## 파일명 규칙
+## 파일명 규칙 {#c-file-names}
 
 ```text
 docs/adr/NNNN-제목.md
@@ -55,6 +55,6 @@ docs/adr/NNNN-제목.md
 ```
 
 * `NNNN`은 4자리 일련번호(0001부터), 한 번 쓴 번호는 재사용하지 않는다.
-* 제목은 소문자·하이픈(또는 한글) 짧게.
+* 제목은 소문자와 하이픈(또는 한글)으로 짧게 쓴다.
 
 관련: [부록 B 라이선스](B-licenses.md)

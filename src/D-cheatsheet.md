@@ -1,8 +1,8 @@
-# 부록 D. 명령어 치트시트 (Runbook)
+# 부록 D. 명령어 치트시트 (Runbook) {#appendix-d}
 
-실습에서 쓴 핵심 커맨드 모음입니다. `⟨…⟩` 는 본인 값으로 바꾸세요.
+실습에서 쓴 주요 명령어 모음입니다. `⟨…⟩` 는 본인 값으로 바꾸세요.
 
-## 1. 이미지 (libguestfs / qemu)
+## 1. 이미지 (libguestfs / qemu) {#d-1-image}
 
 ```bash
 # OS·설치 앱 목록 (부팅 없이)
@@ -38,7 +38,7 @@ qemu-img convert -O qcow2 ⟨in.img⟩ ⟨out.qcow2⟩
 qemu-img info ⟨image.qcow2⟩
 ```
 
-## 2. 디스크 / 부팅
+## 2. 디스크 / 부팅 {#d-2-disk}
 
 ```bash
 # Ventoy 설치 (USB 내용 삭제 주의)
@@ -68,7 +68,7 @@ passwd ⟨user⟩
 exec /sbin/init
 ```
 
-## 3. Docker / Compose
+## 3. Docker / Compose {#d-3-docker}
 
 ```bash
 # 백그라운드 기동
@@ -98,7 +98,7 @@ networks:
     internal: true
 ```
 
-## 4. SSH / OpenSSL
+## 4. SSH / OpenSSL {#d-4-ssh}
 
 ```bash
 # 키 생성
@@ -125,7 +125,7 @@ openssl req -new -key cli.key -subj "/CN=⟨alice⟩" -out cli.csr
 openssl x509 -req -in cli.csr -CA ca.crt -CAkey ca.key -days 365 -out cli.crt
 ```
 
-## 5. 방화벽
+## 5. 방화벽 {#d-5-firewall}
 
 ```bash
 sudo ufw default deny incoming
@@ -152,7 +152,7 @@ sudo nft list ruleset
 sudo iptables-nft -L DOCKER-USER -n -v
 ```
 
-## 6. 네트워크
+## 6. 네트워크 {#d-6-network}
 
 ```bash
 # 라우팅 테이블
@@ -170,9 +170,9 @@ ping ⟨192.0.2.5⟩
 ping -M do -s 8972 ⟨target⟩
 ```
 
-## 7. 서비스 (systemd)
+## 7. 서비스 (systemd) {#d-7-systemd}
 
-옛 문서에는 `service`·`/etc/init.d/` 명령이 많습니다. 지금 배포판은 systemd이고, 옛 명령은 대개 systemd로 넘겨주는 호환용입니다.
+옛 문서에는 `service`·`/etc/init.d/` 명령이 많습니다. 현재 배포판은 systemd를 쓰며, 옛 명령은 대개 systemd로 넘겨 주는 호환용입니다.
 
 | | 옛 방식 (init.d) | 지금 (systemd) |
 | --- | --- | --- |
